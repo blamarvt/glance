@@ -571,7 +571,8 @@ Deletes all images from a Glance server"""
     images = c.get_images()
     for image in images:
         if options.verbose:
-            print 'Deleting image %s "%s" ...' % (image['uuid'], image['name']),
+            subs = (image['uuid'], image['name'])
+            print 'Deleting image %s "%s" ...' % subs
         try:
             c.delete_image(image['uuid'])
             if options.verbose:
@@ -702,7 +703,7 @@ Purges an image from the cache"""
         return FAILURE
 
     if not options.force and \
-       not user_confirm("Purge cached image %s?" % (image_uuid,), default=False):
+       not user_confirm("Purge cached image %s?" % image_uuid, default=False):
         print 'Not purging cached image %s' % (image_uuid,)
         return FAILURE
 

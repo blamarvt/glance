@@ -39,7 +39,6 @@ logger = logging.getLogger('glance.store.scrubber')
 
 class Daemon(object):
     def __init__(self, wakeup_time=300, threads=1000):
-        raise Exception("__init__")
         logger.info(_("Starting Daemon: wakeup_time=%(wakeup_time)s "
                       "threads=%(threads)s") % locals())
         self.wakeup_time = wakeup_time
@@ -85,7 +84,6 @@ class Scrubber(object):
         store.create_stores(options)
 
     def run(self, pool, event=None):
-        raise Exception("here")
         now = time.time()
 
         if not os.path.exists(self.datadir):
@@ -94,11 +92,11 @@ class Scrubber(object):
 
         delete_work = []
         for root, dirs, files in os.walk(self.datadir):
-            for id in files:
-                if id == self.CLEANUP_FILE:
+            for uuid in files:
+                if uuid == self.CLEANUP_FILE:
                     continue
 
-                file_name = os.path.join(root, id)
+                file_name = os.path.join(root, uuid)
                 delete_time = os.stat(file_name).st_mtime
 
                 if delete_time > now:
@@ -109,7 +107,7 @@ class Scrubber(object):
                 if delete_time > now:
                     continue
 
-                delete_work.append((int(id), uri, now))
+                delete_work.append((uuid, uri, now))
 
         logger.info(_("Deleting %s images") % len(delete_work))
         pool.starmap(self._delete, delete_work)
@@ -117,8 +115,8 @@ class Scrubber(object):
         if self.cleanup:
             self._cleanup()
 
-    def _delete(self, id, uri, now):
-        file_path = os.path.join(self.datadir, str(id))
+    def _delete(self, uuid, uri, now):
+        file_path = os.path.join(self.datadir, str(uuid))
         try:
             logger.debug(_("Deleting %(uri)s") % {'uri': uri})
             store.delete_from_backend(uri)
@@ -127,7 +125,7 @@ class Scrubber(object):
             logger.error(msg % {'uri': uri})
             write_queue_file(file_path, uri, now)
 
-        self.registry.update_image(id, {'status': 'deleted'})
+        self.registry.update_image(uuid, {'status': 'deleted'})
         utils.safe_remove(file_path)
 
     def _cleanup(self):
@@ -162,7 +160,7 @@ class Scrubber(object):
             if delete_time + self.cleanup_time > now:
                 continue
 
-            delete_work.append((int(pending_delete['uuid']),
+            delete_work.append((pending_delete['uuid'],
                                 pending_delete['location'],
                                 now))
 

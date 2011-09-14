@@ -283,7 +283,8 @@ class ImageCache(object):
         image_uuid = image_meta['uuid']
 
         if self.hit(image_uuid):
-            msg = _("Skipping prefetch, image '%s' already cached") % image_uuid
+            msg = _("Skipping prefetch, image '%s' already "
+                    "cached") % image_uuid
             logger.warn(msg)
             raise exception.Invalid(msg)
 

@@ -91,13 +91,14 @@ class Location(object):
     Class describing the location of an image that Glance knows about
     """
 
-    def __init__(self, store_name, uri=None, image_uuid=None, store_specs=None):
+    def __init__(self, store_name, uri=None, image_uuid=None,
+                 store_specs=None):
         """
         Create a new Location object.
 
         :param store_name: The string identifier of the storage backend
         :param image_uuid: The identifier of the image in whatever storage
-                         backend is used.
+                           backend is used.
         :param uri: Optional URI to construct location from
         :param store_specs: Dictionary of information about the location
                             of the image that is dependent on the backend
