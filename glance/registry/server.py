@@ -199,16 +199,7 @@ class Controller(object):
 
     def _get_marker(self, req):
         """Parse a marker query param into something usable."""
-        marker = req.str_params.get('marker', None)
-
-        if marker is None:
-            return None
-
-        try:
-            marker = int(marker)
-        except ValueError:
-            raise exc.HTTPBadRequest(_("marker param must be an integer"))
-        return marker
+        return req.str_params.get('marker', None)
 
     def _get_sort_key(self, req):
         """Parse a sort key query param from the request object."""
