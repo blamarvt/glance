@@ -133,8 +133,8 @@ def print_image_formatted(client, image):
     """
     print "URI: %s://%s/images/%s" % (client.use_ssl and "https" or "http",
                                       client.host,
-                                      image['id'])
-    print "Id: %s" % image['id']
+                                      image['uuid'])
+    print "Id: %s" % image['uuid']
     print "Public: " + (image['is_public'] and "Yes" or "No")
     print "Name: %s" % image['name']
     print "Status: %s" % image['status']
@@ -163,7 +163,7 @@ to Glance that represents the metadata for an image.
 
 Field names of note:
 
-id                  Optional. If not specified, an image identifier will be
+uuid                Optional. If not specified, an image identifier will be
                     automatically assigned.
 name                Required. A name for the image.
 size                Optional. Should be size in bytes of the image if
@@ -219,6 +219,9 @@ EXAMPLES
                   'disk_format': fields.pop('disk_format', 'raw'),
                   'container_format': fields.pop('container_format', 'ovf')}
 
+    if 'uuid' in fields:
+        image_meta['uuid'] = fields.pop('uuid')
+
     # Strip any args that are not supported
     unsupported_fields = ['status', 'size']
     for field in unsupported_fields:
@@ -250,8 +253,8 @@ EXAMPLES
     if not options.dry_run:
         try:
             image_meta = c.add_image(image_meta, image_data)
-            image_id = image_meta['id']
-            print "Added new image with ID: %s" % image_id
+            image_uuid = image_meta['uuid']
+            print "Added new image with ID: %s" % image_uuid
             if options.verbose:
                 print "Returned the following metadata for the new image:"
                 for k, v in sorted(image_meta.items()):
@@ -307,7 +310,7 @@ All other field names are considered to be custom properties so be careful
 to spell field names correctly. :)"""
     c = get_client(options)
     try:
-        image_id = args.pop(0)
+        image_uuid = args.pop(0)
     except IndexError:
         print "Please specify the ID of the image you wish to update "
         print "as the first argument"
@@ -346,14 +349,14 @@ to spell field names correctly. :)"""
 
     if not options.dry_run:
         try:
-            image_meta = c.update_image(image_id, image_meta=image_meta)
-            print "Updated image %s" % image_id
+            image_meta = c.update_image(image_uuid, image_meta=image_meta)
+            print "Updated image %s" % image_uuid
 
             if options.verbose:
-                print "Updated image metadata for image %s:" % image_id
+                print "Updated image metadata for image %s:" % image_uuid
                 print_image_formatted(c, image_meta)
         except exception.NotFound:
-            print "No image with ID %s was found" % image_id
+            print "No image with ID %s was found" % image_uuid
             return FAILURE
         except Exception, e:
             print "Failed to update image. Got error:"
@@ -375,25 +378,25 @@ def image_delete(options, args):
 
 Deletes an image from Glance"""
     try:
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the ID of the image you wish to delete "
         print "as the first argument"
         return FAILURE
 
     if not options.force and \
-       not user_confirm("Delete image %s?" % (image_id,), default=False):
-        print 'Not deleting image %s' % (image_id,)
+       not user_confirm("Delete image %s?" % (image_uuid,), default=False):
+        print 'Not deleting image %s' % (image_uuid,)
         return FAILURE
 
     c = get_client(options)
 
     try:
-        c.delete_image(image_id)
-        print "Deleted image %s" % image_id
+        c.delete_image(image_uuid)
+        print "Deleted image %s" % image_uuid
         return SUCCESS
     except exception.NotFound:
-        print "No image with ID %s was found" % image_id
+        print "No image with ID %s was found" % image_uuid
         return FAILURE
 
 
@@ -405,18 +408,18 @@ Shows image metadata for an image in Glance"""
     c = get_client(options)
     try:
         if len(args) > 0:
-            image_id = args[0]
+            image_uuid = args[0]
         else:
             print "Please specify the image identifier as the "
             print "first argument. Example: "
             print "$> glance-admin show 12345"
             return FAILURE
 
-        image = c.get_image_meta(image_id)
+        image = c.get_image_meta(image_uuid)
         print_image_formatted(c, image)
         return SUCCESS
     except exception.NotFound:
-        print "No image with ID %s was found" % image_id
+        print "No image with ID %s was found" % image_uuid
         return FAILURE
     except Exception, e:
         print "Failed to show image. Got error:"
@@ -454,7 +457,7 @@ def _images_index(client, filters, limit, print_header=False, **kwargs):
         print pretty_table.make_header()
 
     for image in images:
-        print pretty_table.make_row(image['id'],
+        print pretty_table.make_row(image['uuid'],
                                     image['name'],
                                     image['disk_format'],
                                     image['container_format'],
@@ -464,7 +467,7 @@ def _images_index(client, filters, limit, print_header=False, **kwargs):
        not user_confirm("Fetch next page?", True):
         return SUCCESS
 
-    parameters['marker'] = images[-1]['id']
+    parameters['marker'] = images[-1]['uuid']
     return _images_index(client, **parameters)
 
 
@@ -523,7 +526,7 @@ def _images_details(client, filters, limit, print_header=False, **kwargs):
        not user_confirm("Fetch next page?", True):
         return SUCCESS
 
-    parameters["marker"] = images[-1]['id']
+    parameters["marker"] = images[-1]['uuid']
     return _images_details(client, **parameters)
 
 
@@ -568,13 +571,13 @@ Deletes all images from a Glance server"""
     images = c.get_images()
     for image in images:
         if options.verbose:
-            print 'Deleting image %s "%s" ...' % (image['id'], image['name']),
+            print 'Deleting image %s "%s" ...' % (image['uuid'], image['name']),
         try:
-            c.delete_image(image['id'])
+            c.delete_image(image['uuid'])
             if options.verbose:
                 print 'done'
         except Exception, e:
-            print 'Failed to delete image %s' % image['id']
+            print 'Failed to delete image %s' % image['uuid']
             print e
             return FAILURE
     return SUCCESS
@@ -606,7 +609,7 @@ List all images currently cached"""
 
     for image in images:
         print pretty_table.make_row(
-            image['id'],
+            image['uuid'],
             image['name'],
             image['last_accessed'],
             image['size'],
@@ -641,7 +644,7 @@ List current invalid cache images"""
 
     for image in images:
         print pretty_table.make_row(
-            image['id'],
+            image['uuid'],
             image['name'],
             image['error'],
             image['last_accessed'],
@@ -677,7 +680,7 @@ List images currently being fetched"""
 
     for image in images:
         print pretty_table.make_row(
-            image['id'],
+            image['uuid'],
             image['name'],
             image['last_modified'],
             image['size'],
@@ -692,19 +695,19 @@ def cache_purge(options, args):
 
 Purges an image from the cache"""
     try:
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the ID of the image you wish to purge "
         print "from the cache as the first argument"
         return FAILURE
 
     if not options.force and \
-       not user_confirm("Purge cached image %s?" % (image_id,), default=False):
-        print 'Not purging cached image %s' % (image_id,)
+       not user_confirm("Purge cached image %s?" % (image_uuid,), default=False):
+        print 'Not purging cached image %s' % (image_uuid,)
         return FAILURE
 
     client = get_client(options)
-    client.purge_cached_image(image_id)
+    client.purge_cached_image(image_uuid)
 
     if options.verbose:
         print "done"
@@ -771,22 +774,22 @@ def cache_prefetch(options, args):
 %(prog)s cache-prefetch [options]
 
 Pre-fetch an image or list of images into the cache"""
-    image_ids = args
-    if not image_ids:
+    image_uuids = args
+    if not image_uuids:
         print "Please specify the ID or a list of image IDs of the images "\
               "you wish to "
         print "prefetch from the cache as the first argument"
         return FAILURE
 
     client = get_client(options)
-    for image_id in image_ids:
+    for image_uuid in image_uuids:
         if options.verbose:
-            print "Prefetching image '%s'" % image_id
+            print "Prefetching image '%s'" % image_uuid
 
         try:
-            client.prefetch_cache_image(image_id)
+            client.prefetch_cache_image(image_uuid)
         except exception.NotFound:
-            print "No image with ID %s was found" % image_id
+            print "No image with ID %s was found" % image_uuid
             continue
 
     if options.verbose:
@@ -817,7 +820,7 @@ List images that are being prefetched"""
 
     for image in images:
         print pretty_table.make_row(
-            image['id'],
+            image['uuid'],
             image['name'],
             image['last_accessed'],
             image['status'])
@@ -830,14 +833,14 @@ def image_members(options, args):
 
 Displays a list of members with which an image is shared"""
     try:
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the ID of the image as the first argument"
         return FAILURE
 
     c = get_client(options)
 
-    members = c.get_image_members(image_id)
+    members = c.get_image_members(image_uuid)
     sharers = 0
     # Output the list of members
     for memb in members:
@@ -879,7 +882,7 @@ Displays a list of images shared with a given member"""
         if 'can_share' in memb and memb['can_share']:
             can_share = ' *'
             sharers += 1
-        print "%s%s" % (memb['image_id'], can_share)
+        print "%s%s" % (memb['image_uuid'], can_share)
 
     # Emit a footnote
     if sharers > 0:
@@ -896,7 +899,7 @@ Replaces the members of the image <ID> to be solely <MEMBER>.  If the
 the image."""
     try:
         member_id = args.pop()
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the image ID and the member name"
         return FAILURE
@@ -905,11 +908,11 @@ the image."""
 
     # Update members
     if not options.dry_run:
-        c.replace_members(image_id, dict(member_id=member_id,
+        c.replace_members(image_uuid, dict(member_id=member_id,
                                          can_share=options.can_share))
     else:
         print "Dry run. We would have done the following:"
-        print ('Replace members of image %(image_id)s with "%(member_id)s"'
+        print ('Replace members of image %(image_uuid)s with "%(member_id)s"'
                % locals())
         if options.can_share:
             print "New member would have been able to further share image."
@@ -924,7 +927,7 @@ Adds the member <MEMBER> to the image <ID>.  If the "--can-share"
 option is given, <MEMBER> will be able to further share the image."""
     try:
         member_id = args.pop()
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the image ID and the member name"
         return FAILURE
@@ -933,10 +936,10 @@ option is given, <MEMBER> will be able to further share the image."""
 
     # Replace members
     if not options.dry_run:
-        c.add_member(image_id, member_id, options.can_share)
+        c.add_member(image_uuid, member_id, options.can_share)
     else:
         print "Dry run. We would have done the following:"
-        print ('Add "%(member_id)" to membership of image %(image_id)s'
+        print ('Add "%(member_id)" to membership of image %(image_uuid)s'
                % locals())
         if options.can_share:
             print "New member would have been able to further share image."
@@ -950,7 +953,7 @@ def member_delete(options, args):
 Deletes the specified member of the image <ID>."""
     try:
         member_id = args.pop()
-        image_id = args.pop()
+        image_uuid = args.pop()
     except IndexError:
         print "Please specify the image ID and the member name"
         return FAILURE
@@ -959,11 +962,11 @@ Deletes the specified member of the image <ID>."""
 
     # Delete member
     if not options.dry_run:
-        c.delete_member(image_id, member_id)
+        c.delete_member(image_uuid, member_id)
     else:
         print "Dry run. We would have done the following:"
         print ('Remove "%(member_id)s" from the member list of image '
-               '"%(image_id)s"' % locals())
+               '"%(image_uuid)s"' % locals())
 
 
 def get_client(options):

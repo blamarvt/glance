@@ -154,14 +154,14 @@ def get_store_from_location(uri):
     return loc.store_name
 
 
-def schedule_delete_from_backend(uri, options, context, image_id, **kwargs):
+def schedule_delete_from_backend(uri, options, context, image_uuid, **kwargs):
     """
     Given a uri and a time, schedule the deletion of an image.
     """
     use_delay = config.get_option(options, 'delayed_delete', type='bool',
                                   default=False)
     if not use_delay:
-        registry.update_image_metadata(options, context, image_id,
+        registry.update_image_metadata(options, context, image_uuid,
                                        {'status': 'deleted'})
         try:
             return delete_from_backend(uri, **kwargs)
@@ -173,12 +173,12 @@ def schedule_delete_from_backend(uri, options, context, image_id, **kwargs):
     scrub_time = config.get_option(options, 'scrub_time', type='int',
                                    default=0)
     delete_time = time.time() + scrub_time
-    file_path = os.path.join(datadir, str(image_id))
+    file_path = os.path.join(datadir, str(image_uuid))
     utils.safe_mkdirs(datadir)
 
     if os.path.exists(file_path):
-        msg = _("Image id %(image_id)s already queued for delete") % {
-                'image_id': image_id}
+        msg = _("Image id %(image_uuid)s already queued for delete") % {
+                'image_uuid': image_uuid}
         raise exception.Duplicate(msg)
 
     with open(file_path, 'w') as f:
@@ -186,5 +186,5 @@ def schedule_delete_from_backend(uri, options, context, image_id, **kwargs):
     os.chmod(file_path, 0600)
     os.utime(file_path, (delete_time, delete_time))
 
-    registry.update_image_metadata(options, context, image_id,
+    registry.update_image_metadata(options, context, image_uuid,
                                    {'status': 'pending_delete'})

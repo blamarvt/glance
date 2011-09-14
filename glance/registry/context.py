@@ -48,7 +48,7 @@ class RequestContext(context.RequestContext):
 
             # Figure out if this image is shared with that tenant
             try:
-                tmp = db_api.image_member_find(self, image.id, self.owner)
+                tmp = db_api.image_member_find(self, image.uuid, self.owner)
                 return not tmp['deleted']
             except exception.NotFound:
                 pass
@@ -91,7 +91,7 @@ class RequestContext(context.RequestContext):
                 return False
         else:
             try:
-                membership = db_api.image_member_find(self, image.id,
+                membership = db_api.image_member_find(self, image.uuid,
                                                       self.owner)
             except exception.NotFound:
                 # Not shared with us anyway

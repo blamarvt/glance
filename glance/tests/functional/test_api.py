@@ -95,6 +95,7 @@ class TestApi(functional.FunctionalTest):
         # attribute and no custom properties. Verify a 200 OK is returned
         image_data = "*" * FIVE_KB
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -125,7 +126,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
 
         expected_image_headers = {
-            'x-image-meta-id': '1',
+            'x-image-meta-uuid': '1',
             'x-image-meta-name': 'Image1',
             'x-image-meta-is_public': 'True',
             'x-image-meta-status': 'active',
@@ -165,7 +166,7 @@ class TestApi(functional.FunctionalTest):
         expected_result = {"images": [
             {"container_format": None,
              "disk_format": None,
-             "id": 1,
+             "uuid": "1",
              "name": "Image1",
              "checksum": "c2e5db72bd7fd153f53ede5da5a06de3",
              "size": 5120}]}
@@ -184,7 +185,7 @@ class TestApi(functional.FunctionalTest):
             "deleted": False,
             "container_format": None,
             "disk_format": None,
-            "id": 1,
+            "uuid": "1",
             "location": "file://%s/1" % self.api_server.image_dir,
             "is_public": True,
             "deleted_at": None,
@@ -225,7 +226,7 @@ class TestApi(functional.FunctionalTest):
             "deleted": False,
             "container_format": None,
             "disk_format": None,
-            "id": 1,
+            "uuid": "1",
             "location": "file://%s/1" % self.api_server.image_dir,
             "is_public": True,
             "deleted_at": None,
@@ -313,6 +314,7 @@ class TestApi(functional.FunctionalTest):
         # 1. POST /images with public image named Image1
         # with no location or image data
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -334,7 +336,7 @@ class TestApi(functional.FunctionalTest):
         response, content = http.request(path, 'GET')
         self.assertEqual(response.status, 200)
         data = json.loads(content)
-        self.assertEqual(data['images'][0]['id'], 1)
+        self.assertEqual(data['images'][0]['uuid'], "1")
         self.assertEqual(data['images'][0]['checksum'], None)
         self.assertEqual(data['images'][0]['size'], 0)
         self.assertEqual(data['images'][0]['container_format'], None)
@@ -350,7 +352,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response['x-image-meta-name'], "Image1")
         self.assertEqual(response['x-image-meta-status'], "queued")
         self.assertEqual(response['x-image-meta-size'], '0')
-        self.assertEqual(response['x-image-meta-id'], '1')
+        self.assertEqual(response['x-image-meta-uuid'], '1')
 
         # 4. PUT /images/1 with image data, verify 200 returned
         image_data = "*" * FIVE_KB
@@ -385,7 +387,7 @@ class TestApi(functional.FunctionalTest):
         data = json.loads(content)
         self.assertEqual(data['images'][0]['checksum'],
                          hashlib.md5(image_data).hexdigest())
-        self.assertEqual(data['images'][0]['id'], 1)
+        self.assertEqual(data['images'][0]['uuid'], "1")
         self.assertEqual(data['images'][0]['size'], FIVE_KB)
         self.assertEqual(data['images'][0]['container_format'], None)
         self.assertEqual(data['images'][0]['disk_format'], None)
@@ -881,6 +883,7 @@ class TestApi(functional.FunctionalTest):
 
         # 1. POST /images with three public images with various attributes
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -889,6 +892,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 201)
 
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '2',
                    'X-Image-Meta-Name': 'Image2',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -897,6 +901,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 201)
 
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '3',
                    'X-Image-Meta-Name': 'Image3',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -913,8 +918,8 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 2)
-        self.assertEqual(data['images'][0]['id'], 3)
-        self.assertEqual(data['images'][1]['id'], 2)
+        self.assertEqual(data['images'][0]['uuid'], '3')
+        self.assertEqual(data['images'][1]['uuid'], '2')
 
         # 3. GET /images with marker
         # Verify only two images were returned
@@ -925,8 +930,8 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 2)
-        self.assertEqual(data['images'][0]['id'], 2)
-        self.assertEqual(data['images'][1]['id'], 1)
+        self.assertEqual(data['images'][0]['uuid'], '2')
+        self.assertEqual(data['images'][1]['uuid'], '1')
 
         # 4. GET /images with marker and limit
         # Verify only one image was returned with the correct id
@@ -937,7 +942,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 1)
-        self.assertEqual(data['images'][0]['id'], 1)
+        self.assertEqual(data['images'][0]['uuid'], '1')
 
         # 5. GET /images/detail with marker and limit
         # Verify only one image was returned with the correct id
@@ -948,7 +953,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 1)
-        self.assertEqual(data['images'][0]['id'], 2)
+        self.assertEqual(data['images'][0]['uuid'], '2')
 
         self.stop_servers()
 
@@ -970,6 +975,7 @@ class TestApi(functional.FunctionalTest):
 
         # 1. POST /images with three public images with various attributes
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Status': 'active',
                    'X-Image-Meta-Container-Format': 'ovf',
@@ -982,6 +988,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 201)
 
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '2',
                    'X-Image-Meta-Name': 'ASDF',
                    'X-Image-Meta-Status': 'active',
                    'X-Image-Meta-Container-Format': 'bare',
@@ -994,6 +1001,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 201)
 
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '3',
                    'X-Image-Meta-Name': 'XYZ',
                    'X-Image-Meta-Status': 'saving',
                    'X-Image-Meta-Container-Format': 'ami',
@@ -1013,9 +1021,9 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 3)
-        self.assertEqual(data['images'][0]['id'], 3)
-        self.assertEqual(data['images'][1]['id'], 2)
-        self.assertEqual(data['images'][2]['id'], 1)
+        self.assertEqual(data['images'][0]['uuid'], '3')
+        self.assertEqual(data['images'][1]['uuid'], '2')
+        self.assertEqual(data['images'][2]['uuid'], '1')
 
         # 3. GET /images sorted by name asc
         params = 'sort_key=name&sort_dir=asc'
@@ -1025,9 +1033,9 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 3)
-        self.assertEqual(data['images'][0]['id'], 2)
-        self.assertEqual(data['images'][1]['id'], 1)
-        self.assertEqual(data['images'][2]['id'], 3)
+        self.assertEqual(data['images'][0]['uuid'], '2')
+        self.assertEqual(data['images'][1]['uuid'], '1')
+        self.assertEqual(data['images'][2]['uuid'], '3')
 
         # 4. GET /images sorted by size desc
         params = 'sort_key=size&sort_dir=desc'
@@ -1037,9 +1045,9 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 3)
-        self.assertEqual(data['images'][0]['id'], 1)
-        self.assertEqual(data['images'][1]['id'], 3)
-        self.assertEqual(data['images'][2]['id'], 2)
+        self.assertEqual(data['images'][0]['uuid'], '1')
+        self.assertEqual(data['images'][1]['uuid'], '3')
+        self.assertEqual(data['images'][2]['uuid'], '2')
 
         # 5. GET /images sorted by size desc with a marker
         params = 'sort_key=size&sort_dir=desc&marker=1'
@@ -1049,8 +1057,8 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 2)
-        self.assertEqual(data['images'][0]['id'], 3)
-        self.assertEqual(data['images'][1]['id'], 2)
+        self.assertEqual(data['images'][0]['uuid'], '3')
+        self.assertEqual(data['images'][1]['uuid'], '2')
 
         # 6. GET /images sorted by name asc with a marker
         params = 'sort_key=name&sort_dir=asc&marker=3'
@@ -1081,6 +1089,7 @@ class TestApi(functional.FunctionalTest):
 
         # 1. POST /images with public image named Image1
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Status': 'active',
                    'X-Image-Meta-Container-Format': 'ovf',
@@ -1092,14 +1101,14 @@ class TestApi(functional.FunctionalTest):
         response, content = http.request(path, 'POST', headers=headers)
         self.assertEqual(response.status, 201)
 
-        # 2. POST /images with public image named Image1, and ID: 1
+        # 2. POST /images with same image_uuid
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1 Update',
                    'X-Image-Meta-Status': 'active',
                    'X-Image-Meta-Container-Format': 'ovf',
                    'X-Image-Meta-Disk-Format': 'vdi',
                    'X-Image-Meta-Size': '19',
-                   'X-Image-Meta-Id': '1',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
         http = httplib2.Http()

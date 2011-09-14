@@ -29,6 +29,7 @@ import random
 import subprocess
 import socket
 import sys
+import uuid
 
 from glance.common import exception
 from glance.common.exception import ProcessExecutionError
@@ -112,6 +113,10 @@ def generate_uid(topic, size=8):
     return '%s-%s' % (topic, ''.join(
         [random.choice('01234567890abcdefghijklmnopqrstuvwxyz')
          for x in xrange(size)]))
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 
 def generate_mac():

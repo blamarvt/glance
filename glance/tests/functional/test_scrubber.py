@@ -55,14 +55,14 @@ class TestScrubber(functional.FunctionalTest):
         client = self._get_client()
         registry = self._get_registry_client()
         meta = client.add_image(TEST_IMAGE_META, TEST_IMAGE_DATA)
-        id = meta['id']
+        uuid = meta['uuid']
 
         filters = {'deleted': True, 'is_public': 'none',
                    'status': 'pending_delete'}
         recs = registry.get_images_detailed(filters=filters)
         self.assertFalse(recs)
 
-        client.delete_image(id)
+        client.delete_image(uuid)
         recs = registry.get_images_detailed(filters=filters)
         self.assertFalse(recs)
 
@@ -86,20 +86,22 @@ class TestScrubber(functional.FunctionalTest):
         client = self._get_client()
         registry = self._get_registry_client()
         meta = client.add_image(TEST_IMAGE_META, TEST_IMAGE_DATA)
-        id = meta['id']
+        uuid = meta['uuid']
 
         filters = {'deleted': True, 'is_public': 'none',
                    'status': 'pending_delete'}
         recs = registry.get_images_detailed(filters=filters)
         self.assertFalse(recs)
 
-        client.delete_image(id)
+        client.delete_image(uuid)
         recs = registry.get_images_detailed(filters=filters)
-        self.assertTrue(recs)
+        self.assertEquals(1, len(recs))
 
         filters = {'deleted': True, 'is_public': 'none'}
         recs = registry.get_images_detailed(filters=filters)
-        self.assertTrue(recs)
+
+        self.assertEquals(1, len(recs))
+
         for rec in recs:
             self.assertEqual(rec['status'], 'pending_delete')
 
@@ -107,13 +109,11 @@ class TestScrubber(functional.FunctionalTest):
         #                15 seconds to scrub. Give it up to 5 min, checking
         #                checking every 15 seconds. When/if it flips to
         #                deleted, bail immediatly.
-        deleted = set()
-        recs = []
         for _ in xrange(3):
             time.sleep(5)
 
             recs = registry.get_images_detailed(filters=filters)
-            self.assertTrue(recs)
+            self.assertEquals(1, len(recs))
 
             # NOTE(jkoelker) Reset the deleted set for this loop
             deleted = set()
@@ -123,7 +123,8 @@ class TestScrubber(functional.FunctionalTest):
             if False not in deleted:
                 break
 
-        self.assertTrue(recs)
+        self.assertEquals(1, len(recs))
+
         for rec in recs:
             self.assertEqual(rec['status'], 'deleted')
 

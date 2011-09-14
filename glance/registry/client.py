@@ -63,9 +63,9 @@ class RegistryClient(BaseClient):
         data = json.loads(res.read())['images']
         return data
 
-    def get_image(self, image_id):
+    def get_image(self, image_uuid):
         """Returns a mapping of image metadata from Registry"""
-        res = self.do_request("GET", "/images/%s" % image_id)
+        res = self.do_request("GET", "/images/%s" % image_uuid)
         data = json.loads(res.read())['image']
         return data
 
@@ -87,7 +87,7 @@ class RegistryClient(BaseClient):
         data = json.loads(res.read())
         return data['image']
 
-    def update_image(self, image_id, image_metadata, purge_props=False):
+    def update_image(self, image_uuid, image_metadata, purge_props=False):
         """
         Updates Registry's information about an image
         """
@@ -103,21 +103,21 @@ class RegistryClient(BaseClient):
         if purge_props:
             headers["X-Glance-Registry-Purge-Props"] = "true"
 
-        res = self.do_request("PUT", "/images/%s" % image_id, body, headers)
+        res = self.do_request("PUT", "/images/%s" % image_uuid, body, headers)
         data = json.loads(res.read())
         image = data['image']
         return image
 
-    def delete_image(self, image_id):
+    def delete_image(self, image_uuid):
         """
         Deletes Registry's information about an image
         """
-        self.do_request("DELETE", "/images/%s" % image_id)
+        self.do_request("DELETE", "/images/%s" % image_uuid)
         return True
 
-    def get_image_members(self, image_id):
+    def get_image_members(self, image_uuid):
         """Returns a list of membership associations from Registry"""
-        res = self.do_request("GET", "/images/%s/members" % image_id)
+        res = self.do_request("GET", "/images/%s/members" % image_uuid)
         data = json.loads(res.read())['members']
         return data
 
@@ -127,7 +127,7 @@ class RegistryClient(BaseClient):
         data = json.loads(res.read())['shared_images']
         return data
 
-    def replace_members(self, image_id, member_data):
+    def replace_members(self, image_uuid, member_data):
         """Replaces Registry's information about image membership"""
         if isinstance(member_data, (list, tuple)):
             member_data = dict(memberships=list(member_data))
@@ -139,11 +139,11 @@ class RegistryClient(BaseClient):
 
         headers = {'Content-Type': 'application/json', }
 
-        res = self.do_request("PUT", "/images/%s/members" % image_id,
+        res = self.do_request("PUT", "/images/%s/members" % image_uuid,
                               body, headers)
         return res.status == 204
 
-    def add_member(self, image_id, member_id, can_share=None):
+    def add_member(self, image_uuid, member_id, can_share=None):
         """Adds to Registry's information about image membership"""
         body = None
         headers = {}
@@ -153,11 +153,11 @@ class RegistryClient(BaseClient):
             headers['Content-Type'] = 'application/json'
 
         res = self.do_request("PUT", "/images/%s/members/%s" %
-                              (image_id, member_id), body, headers)
+                              (image_uuid, member_id), body, headers)
         return res.status == 204
 
-    def delete_member(self, image_id, member_id):
+    def delete_member(self, image_uuid, member_id):
         """Deletes Registry's information about image membership"""
         res = self.do_request("DELETE", "/images/%s/members/%s" %
-                              (image_id, member_id))
+                              (image_uuid, member_id))
         return res.status == 204

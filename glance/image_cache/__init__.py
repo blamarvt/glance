@@ -142,21 +142,21 @@ class ImageCache(object):
         """This contains image ids that currently being prefetched"""
         return os.path.join(self.path, 'prefetching')
 
-    def path_for_image(self, image_id):
+    def path_for_image(self, image_uuid):
         """This crafts an absolute path to a specific entry"""
-        return os.path.join(self.path, str(image_id))
+        return os.path.join(self.path, str(image_uuid))
 
-    def incomplete_path_for_image(self, image_id):
+    def incomplete_path_for_image(self, image_uuid):
         """This crafts an absolute path to a specific entry in the incomplete
         directory
         """
-        return os.path.join(self.incomplete_path, str(image_id))
+        return os.path.join(self.incomplete_path, str(image_uuid))
 
-    def invalid_path_for_image(self, image_id):
+    def invalid_path_for_image(self, image_uuid):
         """This crafts an absolute path to a specific entry in the invalid
         directory
         """
-        return os.path.join(self.invalid_path, str(image_id))
+        return os.path.join(self.invalid_path, str(image_uuid))
 
     @contextmanager
     def open(self, image_meta, mode="rb"):
@@ -184,8 +184,8 @@ class ImageCache(object):
 
     @contextmanager
     def _open_write(self, image_meta, mode):
-        image_id = image_meta['id']
-        incomplete_path = self.incomplete_path_for_image(image_id)
+        image_uuid = image_meta['uuid']
+        incomplete_path = self.incomplete_path_for_image(image_uuid)
 
         def set_xattr(key, value):
             utils.set_xattr(incomplete_path, key, value)
@@ -194,7 +194,7 @@ class ImageCache(object):
             set_xattr('image_name', image_meta['name'])
             set_xattr('hits', 0)
 
-            final_path = self.path_for_image(image_id)
+            final_path = self.path_for_image(image_uuid)
             logger.debug(_("fetch finished, commiting by moving "
                          "'%(incomplete_path)s' to '%(final_path)s'"),
                          dict(incomplete_path=incomplete_path,
@@ -205,7 +205,7 @@ class ImageCache(object):
             set_xattr('image_name', image_meta['name'])
             set_xattr('error', "%s" % e)
 
-            invalid_path = self.invalid_path_for_image(image_id)
+            invalid_path = self.invalid_path_for_image(image_uuid)
             logger.debug(_("fetch errored, rolling back by moving "
                          "'%(incomplete_path)s' to '%(invalid_path)s'"),
                          dict(incomplete_path=incomplete_path,
@@ -224,15 +224,15 @@ class ImageCache(object):
 
     @contextmanager
     def _open_read(self, image_meta, mode):
-        image_id = image_meta['id']
-        path = self.path_for_image(image_id)
+        image_uuid = image_meta['uuid']
+        path = self.path_for_image(image_uuid)
         with open(path, mode) as cache_file:
             yield cache_file
 
         utils.inc_xattr(path, 'hits')  # bump the hit count
 
-    def hit(self, image_id):
-        return os.path.exists(self.path_for_image(image_id))
+    def hit(self, image_uuid):
+        return os.path.exists(self.path_for_image(image_uuid))
 
     @staticmethod
     def _delete_file(path):
@@ -243,8 +243,8 @@ class ImageCache(object):
             logger.warn(_("image cache file '%s' doesn't exist, unable to"
                         " delete"), path)
 
-    def purge(self, image_id):
-        path = self.path_for_image(image_id)
+    def purge(self, image_uuid):
+        path = self.path_for_image(image_uuid)
         self._delete_file(path)
 
     def clear(self):
@@ -254,9 +254,9 @@ class ImageCache(object):
             purged += 1
         return purged
 
-    def is_image_currently_being_written(self, image_id):
+    def is_image_currently_being_written(self, image_uuid):
         """Returns true if we're currently downloading an image"""
-        incomplete_path = self.incomplete_path_for_image(image_id)
+        incomplete_path = self.incomplete_path_for_image(image_uuid)
         return os.path.exists(incomplete_path)
 
     def is_currently_prefetching_any_images(self):
@@ -266,12 +266,12 @@ class ImageCache(object):
         """
         return len(os.listdir(self.prefetching_path)) > 0
 
-    def is_image_queued_for_prefetch(self, image_id):
-        prefetch_path = os.path.join(self.prefetch_path, str(image_id))
+    def is_image_queued_for_prefetch(self, image_uuid):
+        prefetch_path = os.path.join(self.prefetch_path, str(image_uuid))
         return os.path.exists(prefetch_path)
 
-    def is_image_currently_prefetching(self, image_id):
-        prefetching_path = os.path.join(self.prefetching_path, str(image_id))
+    def is_image_currently_prefetching(self, image_uuid):
+        prefetching_path = os.path.join(self.prefetching_path, str(image_uuid))
         return os.path.exists(prefetching_path)
 
     def queue_prefetch(self, image_meta):
@@ -280,26 +280,26 @@ class ImageCache(object):
         If the image already exists in the queue directory or the
         prefetching directory, we ignore it.
         """
-        image_id = image_meta['id']
+        image_uuid = image_meta['uuid']
 
-        if self.hit(image_id):
-            msg = _("Skipping prefetch, image '%s' already cached") % image_id
+        if self.hit(image_uuid):
+            msg = _("Skipping prefetch, image '%s' already cached") % image_uuid
             logger.warn(msg)
             raise exception.Invalid(msg)
 
-        if self.is_image_currently_prefetching(image_id):
+        if self.is_image_currently_prefetching(image_uuid):
             msg = _("Skipping prefetch, already prefetching "
-                    "image '%s'") % image_id
+                    "image '%s'") % image_uuid
             logger.warn(msg)
             raise exception.Invalid(msg)
 
-        if self.is_image_queued_for_prefetch(image_id):
+        if self.is_image_queued_for_prefetch(image_uuid):
             msg = _("Skipping prefetch, image '%s' already queued for"
-                    " prefetching") % image_id
+                    " prefetching") % image_uuid
             logger.warn(msg)
             raise exception.Invalid(msg)
 
-        prefetch_path = os.path.join(self.prefetch_path, str(image_id))
+        prefetch_path = os.path.join(self.prefetch_path, str(image_uuid))
 
         # Touch the file to add it to the queue
         with open(prefetch_path, "w") as f:
@@ -307,12 +307,12 @@ class ImageCache(object):
 
         utils.set_xattr(prefetch_path, 'image_name', image_meta['name'])
 
-    def delete_queued_prefetch_image(self, image_id):
-        prefetch_path = os.path.join(self.prefetch_path, str(image_id))
+    def delete_queued_prefetch_image(self, image_uuid):
+        prefetch_path = os.path.join(self.prefetch_path, str(image_uuid))
         self._delete_file(prefetch_path)
 
-    def delete_prefetching_image(self, image_id):
-        prefetching_path = os.path.join(self.prefetching_path, str(image_id))
+    def delete_prefetching_image(self, image_uuid):
+        prefetching_path = os.path.join(self.prefetching_path, str(image_uuid))
         self._delete_file(prefetching_path)
 
     def pop_prefetch_item(self):
@@ -333,15 +333,15 @@ class ImageCache(object):
         items.sort(reverse=True)
 
         mtime, path = items.pop()
-        image_id = os.path.basename(path)
-        return image_id
+        image_uuid = os.path.basename(path)
+        return image_uuid
 
-    def do_prefetch(self, image_id):
+    def do_prefetch(self, image_uuid):
         """This moves the file from the prefetch queue path to the in-progress
         prefetching path (so we don't try to prefetch something twice).
         """
-        prefetch_path = os.path.join(self.prefetch_path, str(image_id))
-        prefetching_path = os.path.join(self.prefetching_path, str(image_id))
+        prefetch_path = os.path.join(self.prefetch_path, str(image_uuid))
+        prefetching_path = os.path.join(self.prefetching_path, str(image_uuid))
         os.rename(prefetch_path, prefetching_path)
 
     @staticmethod
@@ -357,14 +357,8 @@ class ImageCache(object):
                                     .isoformat()
 
         for path in self.get_all_regular_files(basepath):
-            filename = os.path.basename(path)
-            try:
-                image_id = int(filename)
-            except ValueError, TypeError:
-                continue
-
             entry = {}
-            entry['id'] = image_id
+            entry['uuid'] = os.path.basename(path)
             entry['path'] = path
             entry['name'] = utils.get_xattr(path, 'image_name',
                                             default='UNKNOWN')

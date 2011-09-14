@@ -255,13 +255,13 @@ class Store(glance.store.base.Store):
         key.BufferSize = self.CHUNKSIZE
         return ChunkedFile(key)
 
-    def add(self, image_id, image_file, image_size):
+    def add(self, image_uuid, image_file, image_size):
         """
         Stores an image file with supplied identifier to the backend
         storage system and returns an `glance.store.ImageAddResult` object
         containing information about the stored image.
 
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
         :param image_file: The image data to write, as a file-like object
         :param image_size: The size of the image data to write, in bytes
 
@@ -282,7 +282,7 @@ class Store(glance.store.base.Store):
 
         loc = StoreLocation({'scheme': self.scheme,
                              'bucket': self.bucket,
-                             'key': image_id,
+                             'key': image_uuid,
                              's3serviceurl': self.full_s3_host,
                              'accesskey': self.access_key,
                              'secretkey': self.secret_key})
@@ -294,7 +294,7 @@ class Store(glance.store.base.Store):
         create_bucket_if_missing(self.bucket, s3_conn, self.options)
 
         bucket_obj = get_bucket(s3_conn, self.bucket)
-        obj_name = str(image_id)
+        obj_name = str(image_uuid)
 
         key = bucket_obj.get_key(obj_name)
         if key and key.exists():

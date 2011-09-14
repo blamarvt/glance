@@ -197,7 +197,7 @@ class TestStore(unittest.TestCase):
 
     def test_add(self):
         """Test that we can add an image via the s3 backend"""
-        expected_image_id = 42
+        expected_image_uuid = 42
         expected_s3_size = FIVE_KB
         expected_s3_contents = "*" * expected_s3_size
         expected_checksum = hashlib.md5(expected_s3_contents).hexdigest()
@@ -206,7 +206,7 @@ class TestStore(unittest.TestCase):
             S3_OPTIONS['s3_store_secret_key'],
             S3_OPTIONS['s3_store_host'],
             S3_OPTIONS['s3_store_bucket'],
-            expected_image_id)
+            expected_image_uuid)
         image_s3 = StringIO.StringIO(expected_s3_contents)
 
         location, size, checksum = self.store.add(42, image_s3,
@@ -243,7 +243,7 @@ class TestStore(unittest.TestCase):
                       'localhost:8080/v1']
         i = 42
         for variation in variations:
-            expected_image_id = i
+            expected_image_uuid = i
             expected_s3_size = FIVE_KB
             expected_s3_contents = "*" * expected_s3_size
             expected_checksum = \
@@ -255,7 +255,7 @@ class TestStore(unittest.TestCase):
                 new_options['s3_store_secret_key'],
                 new_options['s3_store_host'],
                 new_options['s3_store_bucket'],
-                expected_image_id)
+                expected_image_uuid)
             image_s3 = StringIO.StringIO(expected_s3_contents)
 
             self.store = Store(new_options)

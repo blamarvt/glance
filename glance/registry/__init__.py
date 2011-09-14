@@ -42,9 +42,9 @@ def get_images_detail(options, context, **kwargs):
     return c.get_images_detailed(**kwargs)
 
 
-def get_image_metadata(options, context, image_id):
+def get_image_metadata(options, context, image_uuid):
     c = get_registry_client(options, context)
-    return c.get_image(image_id)
+    return c.get_image(image_uuid)
 
 
 def add_image_metadata(options, context, image_meta):
@@ -63,14 +63,14 @@ def add_image_metadata(options, context, image_meta):
     return new_image_meta
 
 
-def update_image_metadata(options, context, image_id, image_meta,
+def update_image_metadata(options, context, image_uuid, image_meta,
                           purge_props=False):
     if options['debug']:
-        logger.debug(_("Updating image metadata for image %s..."), image_id)
+        logger.debug(_("Updating image metadata for image %s..."), image_uuid)
         _debug_print_metadata(image_meta)
 
     c = get_registry_client(options, context)
-    new_image_meta = c.update_image(image_id, image_meta, purge_props)
+    new_image_meta = c.update_image(image_uuid, image_meta, purge_props)
 
     if options['debug']:
         logger.debug(_("Returned image metadata from call to "
@@ -80,15 +80,15 @@ def update_image_metadata(options, context, image_id, image_meta,
     return new_image_meta
 
 
-def delete_image_metadata(options, context, image_id):
-    logger.debug(_("Deleting image metadata for image %s..."), image_id)
+def delete_image_metadata(options, context, image_uuid):
+    logger.debug(_("Deleting image metadata for image %s..."), image_uuid)
     c = get_registry_client(options, context)
-    return c.delete_image(image_id)
+    return c.delete_image(image_uuid)
 
 
-def get_image_members(options, context, image_id):
+def get_image_members(options, context, image_uuid):
     c = get_registry_client(options, context)
-    return c.get_image_members(image_id)
+    return c.get_image_members(image_uuid)
 
 
 def get_member_images(options, context, member_id):
@@ -96,19 +96,19 @@ def get_member_images(options, context, member_id):
     return c.get_member_images(member_id)
 
 
-def replace_members(options, context, image_id, member_data):
+def replace_members(options, context, image_uuid, member_data):
     c = get_registry_client(options, context)
-    return c.replace_members(image_id, member_data)
+    return c.replace_members(image_uuid, member_data)
 
 
-def add_member(options, context, image_id, member_id, can_share=None):
+def add_member(options, context, image_uuid, member_id, can_share=None):
     c = get_registry_client(options, context)
-    return c.add_member(image_id, member_id, can_share=can_share)
+    return c.add_member(image_uuid, member_id, can_share=can_share)
 
 
-def delete_member(options, context, image_id, member_id):
+def delete_member(options, context, image_uuid, member_id):
     c = get_registry_client(options, context)
-    return c.delete_member(image_id, member_id)
+    return c.delete_member(image_uuid, member_id)
 
 
 def _debug_print_metadata(image_meta):

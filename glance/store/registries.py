@@ -49,7 +49,7 @@ class Parallax(ImageRegistry):
     """
 
     @classmethod
-    def lookup(cls, image_id):
+    def lookup(cls, image_uuid):
         """
         Takes an image ID and checks if that image is registered in Parallax,
         and if so, returns the image metadata. If the image does not exist,
@@ -59,7 +59,7 @@ class Parallax(ImageRegistry):
         # Unfortunately, the decision to make all adapters have no state
         # hinders this...
         c = client.ParallaxClient()
-        return c.get_image(image_id)
+        return c.get_image(image_uuid)
 
 
 REGISTRY_ADAPTERS = {
@@ -67,17 +67,17 @@ REGISTRY_ADAPTERS = {
 }
 
 
-def lookup_by_registry(registry, image_id):
+def lookup_by_registry(registry, image_uuid):
     """
     Convenience function to lookup image metadata for the given
     opaque image identifier and registry.
 
     :param registry: String name of registry to use for lookups
-    :param image_id: Opaque image identifier
+    :param image_uuid: Opaque image identifier
     """
     try:
         adapter = REGISTRY_ADAPTERS[registry]
     except KeyError:
         raise UnknownImageRegistry("'%s' not found" % registry)
 
-    return adapter.lookup(image_id)
+    return adapter.lookup(image_uuid)

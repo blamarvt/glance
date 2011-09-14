@@ -283,13 +283,13 @@ class Store(glance.store.base.Store):
                                                   reason=reason)
         return result
 
-    def add(self, image_id, image_file, image_size):
+    def add(self, image_uuid, image_file, image_size):
         """
         Stores an image file with supplied identifier to the backend
         storage system and returns an `glance.store.ImageAddResult` object
         containing information about the stored image.
 
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
         :param image_file: The image data to write, as a file-like object
         :param image_size: The size of the image data to write, in bytes
 
@@ -320,7 +320,7 @@ class Store(glance.store.base.Store):
 
         create_container_if_missing(self.container, swift_conn, self.options)
 
-        obj_name = str(image_id)
+        obj_name = str(image_uuid)
         location = StoreLocation({'scheme': self.scheme,
                                   'container': self.container,
                                   'obj': obj_name,
@@ -356,7 +356,7 @@ class Store(glance.store.base.Store):
                         logger.debug(_("Writing %(chunk_size)d bytes for "
                                        "chunk %(chunk_id)d/"
                                        "%(total_chunks)d to disk buffer "
-                                       "for image %(image_id)s")
+                                       "for image %(image_uuid)s")
                                      % locals())
                         chunk = image_file.read(chunk_size)
                         checksum.update(chunk)
@@ -364,7 +364,7 @@ class Store(glance.store.base.Store):
                         disk_buffer.flush()
                         logger.debug(_("Writing chunk %(chunk_id)d/"
                                        "%(total_chunks)d to Swift "
-                                       "for image %(image_id)s")
+                                       "for image %(image_uuid)s")
                                      % locals())
                         chunk_etag = swift_conn.put_object(
                             self.container,

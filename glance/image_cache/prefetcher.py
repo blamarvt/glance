@@ -38,10 +38,10 @@ class Prefetcher(object):
         self.options = options
         self.cache = ImageCache(options)
 
-    def fetch_image_into_cache(self, image_id):
+    def fetch_image_into_cache(self, image_uuid):
         ctx = context.RequestContext(is_admin=True, show_deleted=True)
         image_meta = registry.get_image_metadata(
-                    self.options, ctx, image_id)
+                    self.options, ctx, image_uuid)
         with self.cache.open(image_meta, "wb") as cache_file:
             chunks = get_from_backend(image_meta['location'],
                                       expected_size=image_meta['size'],
@@ -55,33 +55,33 @@ class Prefetcher(object):
             return
 
         try:
-            image_id = self.cache.pop_prefetch_item()
+            image_uuid = self.cache.pop_prefetch_item()
         except IndexError:
             logger.debug(_("Nothing to prefetch, going back to sleep..."))
             return
 
-        if self.cache.hit(image_id):
+        if self.cache.hit(image_uuid):
             logger.warn(_("Image %s is already in the cache, deleting "
-                        "prefetch job and going back to sleep..."), image_id)
-            self.cache.delete_queued_prefetch_image(image_id)
+                        "prefetch job and going back to sleep..."), image_uuid)
+            self.cache.delete_queued_prefetch_image(image_uuid)
             return
 
         # NOTE(sirp): if someone is already downloading an image that is in
         # the prefetch queue, then go ahead and delete that item and try to
         # prefetch another
-        if self.cache.is_image_currently_being_written(image_id):
+        if self.cache.is_image_currently_being_written(image_uuid):
             logger.warn(_("Image %s is already being cached, deleting "
-                        "prefetch job and going back to sleep..."), image_id)
-            self.cache.delete_queued_prefetch_image(image_id)
+                        "prefetch job and going back to sleep..."), image_uuid)
+            self.cache.delete_queued_prefetch_image(image_uuid)
             return
 
-        logger.debug(_("Prefetching '%s'"), image_id)
-        self.cache.do_prefetch(image_id)
+        logger.debug(_("Prefetching '%s'"), image_uuid)
+        self.cache.do_prefetch(image_uuid)
 
         try:
-            self.fetch_image_into_cache(image_id)
+            self.fetch_image_into_cache(image_uuid)
         finally:
-            self.cache.delete_prefetching_image(image_id)
+            self.cache.delete_prefetching_image(image_uuid)
 
 
 def app_factory(global_config, **local_conf):

@@ -165,13 +165,13 @@ class Store(glance.store.base.Store):
         else:
             raise exception.NotFound(_("Image file %s does not exist") % fn)
 
-    def add(self, image_id, image_file, image_size):
+    def add(self, image_uuid, image_file, image_size):
         """
         Stores an image file with supplied identifier to the backend
         storage system and returns an `glance.store.ImageAddResult` object
         containing information about the stored image.
 
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
         :param image_file: The image data to write, as a file-like object
         :param image_size: The size of the image data to write, in bytes
 
@@ -185,7 +185,7 @@ class Store(glance.store.base.Store):
               is the supplied image ID.
         """
 
-        filepath = os.path.join(self.datadir, str(image_id))
+        filepath = os.path.join(self.datadir, str(image_uuid))
 
         if os.path.exists(filepath):
             raise exception.Duplicate(_("Image file %s already exists!")

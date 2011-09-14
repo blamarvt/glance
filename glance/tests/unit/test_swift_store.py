@@ -235,7 +235,7 @@ class TestStore(unittest.TestCase):
 
     def test_add(self):
         """Test that we can add an image via the swift backend"""
-        expected_image_id = 42
+        expected_image_uuid = 42
         expected_swift_size = FIVE_KB
         expected_swift_contents = "*" * expected_swift_size
         expected_checksum = hashlib.md5(expected_swift_contents).hexdigest()
@@ -244,7 +244,7 @@ class TestStore(unittest.TestCase):
             SWIFT_OPTIONS['swift_store_key'],
             SWIFT_OPTIONS['swift_store_auth_address'],
             SWIFT_OPTIONS['swift_store_container'],
-            expected_image_id)
+            expected_image_uuid)
         image_swift = StringIO.StringIO(expected_swift_contents)
 
         location, size, checksum = self.store.add(42, image_swift,
@@ -279,7 +279,7 @@ class TestStore(unittest.TestCase):
                       'localhost:8080/v1']
         i = 42
         for variation in variations:
-            expected_image_id = i
+            expected_image_uuid = i
             expected_swift_size = FIVE_KB
             expected_swift_contents = "*" * expected_swift_size
             expected_checksum = \
@@ -291,7 +291,7 @@ class TestStore(unittest.TestCase):
                 new_options['swift_store_key'],
                 new_options['swift_store_auth_address'],
                 new_options['swift_store_container'],
-                expected_image_id)
+                expected_image_uuid)
             image_swift = StringIO.StringIO(expected_swift_contents)
 
             self.store = Store(new_options)
@@ -342,7 +342,7 @@ class TestStore(unittest.TestCase):
         options = SWIFT_OPTIONS.copy()
         options['swift_store_create_container_on_put'] = 'True'
         options['swift_store_container'] = 'noexist'
-        expected_image_id = 42
+        expected_image_uuid = 42
         expected_swift_size = FIVE_KB
         expected_swift_contents = "*" * expected_swift_size
         expected_checksum = hashlib.md5(expected_swift_contents).hexdigest()
@@ -351,7 +351,7 @@ class TestStore(unittest.TestCase):
             options['swift_store_key'],
             options['swift_store_auth_address'],
             options['swift_store_container'],
-            expected_image_id)
+            expected_image_uuid)
         image_swift = StringIO.StringIO(expected_swift_contents)
 
         self.store = Store(options)
@@ -379,7 +379,7 @@ class TestStore(unittest.TestCase):
         """
         options = SWIFT_OPTIONS.copy()
         options['swift_store_container'] = 'glance'
-        expected_image_id = 42
+        expected_image_uuid = 42
         expected_swift_size = FIVE_KB
         expected_swift_contents = "*" * expected_swift_size
         expected_checksum = hashlib.md5(expected_swift_contents).hexdigest()
@@ -388,7 +388,7 @@ class TestStore(unittest.TestCase):
             options['swift_store_key'],
             options['swift_store_auth_address'],
             options['swift_store_container'],
-            expected_image_id)
+            expected_image_uuid)
         image_swift = StringIO.StringIO(expected_swift_contents)
 
         orig_max_size = glance.store.swift.DEFAULT_LARGE_OBJECT_SIZE

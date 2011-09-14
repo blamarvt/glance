@@ -29,7 +29,7 @@ class FakeImage(object):
     """
 
     def __init__(self, owner, is_public):
-        self.id = None
+        self.uuid = None
         self.owner = owner
         self.is_public = is_public
 

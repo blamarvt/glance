@@ -81,12 +81,12 @@ class ResourceTest(unittest.TestCase):
                     'controller': None,
                     'format': None,
                     'action': 'update',
-                    'id': 12,
+                    'uuid': 12,
                 },
             ],
         }
 
-        expected = {'action': 'update', 'id': 12}
+        expected = {'action': 'update', 'uuid': 12}
         actual = wsgi.Resource(None, None, None).get_action_args(env)
 
         self.assertEqual(actual, expected)

@@ -99,7 +99,7 @@ class Controller(api.BaseController):
         :retval The response body is a mapping of the following form::
 
             {'images': [
-                {'id': <ID>,
+                {'uuid': <ID>,
                  'name': <NAME>,
                  'disk_format': <DISK_FORMAT>,
                  'container_format': <DISK_FORMAT>,
@@ -124,7 +124,7 @@ class Controller(api.BaseController):
         :retval The response body is a mapping of the following form::
 
             {'images': [
-                {'id': <ID>,
+                {'uuid': <ID>,
                  'name': <NAME>,
                  'size': <SIZE>,
                  'disk_format': <DISK_FORMAT>,
@@ -297,7 +297,7 @@ class Controller(api.BaseController):
             return image_meta
         except exception.Duplicate:
             msg = (_("An image with identifier %s already exists")
-                  % image_meta['id'])
+                  % image_meta['uuid'])
             logger.error(msg)
             raise HTTPConflict(msg, request=req, content_type="text/plain")
         except exception.Invalid, e:
@@ -327,7 +327,7 @@ class Controller(api.BaseController):
         try:
             req.get_content_type('application/octet-stream')
         except exception.InvalidContentType:
-            self._safe_kill(req, image_meta['id'])
+            self._safe_kill(req, image_meta['uuid'])
             msg = _("Content-Type must be application/octet-stream")
             logger.error(msg)
             raise HTTPBadRequest(explanation=msg)
@@ -337,12 +337,12 @@ class Controller(api.BaseController):
 
         store = self.get_store_or_400(req, store_name)
 
-        image_id = image_meta['id']
-        logger.debug(_("Setting image %s to status 'saving'"), image_id)
-        registry.update_image_metadata(self.options, req.context, image_id,
+        image_uuid = image_meta['uuid']
+        logger.debug(_("Setting image %s to status 'saving'"), image_uuid)
+        registry.update_image_metadata(self.options, req.context, image_uuid,
                                        {'status': 'saving'})
         try:
-            logger.debug(_("Uploading image data for image %(image_id)s "
+            logger.debug(_("Uploading image data for image %(image_uuid)s "
                          "to %(store_name)s store"), locals())
             if req.content_length:
                 image_size = int(req.content_length)
@@ -352,7 +352,7 @@ class Controller(api.BaseController):
                 logger.debug(_("Got request with no content-length and no "
                                "x-image-meta-size header"))
                 image_size = 0
-            location, size, checksum = store.add(image_meta['id'],
+            location, size, checksum = store.add(image_meta['uuid'],
                                                  req.body_file,
                                                  image_size)
 
@@ -365,17 +365,17 @@ class Controller(api.BaseController):
                        "(%(checksum)s) did not match. Setting image "
                        "status to 'killed'.") % locals()
                 logger.error(msg)
-                self._safe_kill(req, image_id)
+                self._safe_kill(req, image_uuid)
                 raise HTTPBadRequest(msg, content_type="text/plain",
                                      request=req)
 
             # Update the database with the checksum returned
             # from the backend store
-            logger.debug(_("Updating image %(image_id)s data. "
+            logger.debug(_("Updating image %(image_uuid)s data. "
                          "Checksum set to %(checksum)s, size set "
                          "to %(size)d"), locals())
             registry.update_image_metadata(self.options, req.context,
-                                           image_id,
+                                           image_uuid,
                                            {'checksum': checksum,
                                             'size': size})
             self.notifier.info('image.upload', image_meta)
@@ -385,14 +385,14 @@ class Controller(api.BaseController):
         except exception.Duplicate, e:
             msg = _("Attempt to upload duplicate image: %s") % e
             logger.error(msg)
-            self._safe_kill(req, image_id)
+            self._safe_kill(req, image_uuid)
             self.notifier.error('image.upload', msg)
             raise HTTPConflict(msg, request=req)
 
         except exception.NotAuthorized, e:
             msg = _("Unauthorized upload attempt: %s") % e
             logger.error(msg)
-            self._safe_kill(req, image_id)
+            self._safe_kill(req, image_uuid)
             self.notifier.error('image.upload', msg)
             raise HTTPForbidden(msg, request=req,
                                 content_type='text/plain')
@@ -401,7 +401,7 @@ class Controller(api.BaseController):
             tb_info = traceback.format_exc()
             logger.error(tb_info)
 
-            self._safe_kill(req, image_id)
+            self._safe_kill(req, image_uuid)
 
             msg = _("Error uploading image: (%(class_name)s): "
                     "%(exc)s") % ({'class_name': e.__class__.__name__,
@@ -410,13 +410,13 @@ class Controller(api.BaseController):
             self.notifier.error('image.upload', msg)
             raise HTTPBadRequest(msg, request=req)
 
-    def _activate(self, req, image_id, location):
+    def _activate(self, req, image_uuid, location):
         """
         Sets the image status to `active` and the image's location
         attribute.
 
         :param req: The WSGI/Webob Request object
-        :param image_id: Opaque image identifier
+        :param image_uuid: Opaque image identifier
         :param location: Location of where Glance stored this image
         """
         image_meta = {}
@@ -424,22 +424,22 @@ class Controller(api.BaseController):
         image_meta['status'] = 'active'
         return registry.update_image_metadata(self.options,
                                        req.context,
-                                       image_id,
+                                       image_uuid,
                                        image_meta)
 
-    def _kill(self, req, image_id):
+    def _kill(self, req, image_uuid):
         """
         Marks the image status to `killed`.
 
         :param req: The WSGI/Webob Request object
-        :param image_id: Opaque image identifier
+        :param image_uuid: Opaque image identifier
         """
         registry.update_image_metadata(self.options,
                                        req.context,
-                                       image_id,
+                                       image_uuid,
                                        {'status': 'killed'})
 
-    def _safe_kill(self, req, image_id):
+    def _safe_kill(self, req, image_uuid):
         """
         Mark image killed without raising exceptions if it fails.
 
@@ -447,13 +447,13 @@ class Controller(api.BaseController):
         not raise itself, rather it should just log its error.
 
         :param req: The WSGI/Webob Request object
-        :param image_id: Opaque image identifier
+        :param image_uuid: Opaque image identifier
         """
         try:
-            self._kill(req, image_id)
+            self._kill(req, image_uuid)
         except Exception, e:
             logger.error(_("Unable to kill image %(id)s: "
-                           "%(exc)s") % ({'id': image_id,
+                           "%(exc)s") % ({'uuid': image_uuid,
                            'exc': repr(e)}))
 
     def _upload_and_activate(self, req, image_meta):
@@ -467,13 +467,13 @@ class Controller(api.BaseController):
 
         :retval Mapping of updated image data
         """
-        image_id = image_meta['id']
+        image_uuid = image_meta['uuid']
         # This is necessary because of a bug in Webob 1.0.2 - 1.0.7
         # See: https://bitbucket.org/ianb/webob/
         # issue/12/fix-for-issue-6-broke-chunked-transfer
         req.is_body_readable = True
         location = self._upload(req, image_meta)
-        return self._activate(req, image_id, location)
+        return self._activate(req, image_uuid, location)
 
     def create(self, req, image_meta, image_data):
         """
@@ -516,14 +516,14 @@ class Controller(api.BaseController):
                                 content_type="text/plain")
 
         image_meta = self._reserve(req, image_meta)
-        image_id = image_meta['id']
+        image_uuid = image_meta['uuid']
 
         if image_data is not None:
             image_meta = self._upload_and_activate(req, image_meta)
         else:
             location = image_meta.get('location')
             if location:
-                image_meta = self._activate(req, image_id, location)
+                image_meta = self._activate(req, image_uuid, location)
 
         return {'image_meta': image_meta}
 
@@ -610,13 +610,13 @@ class Controller(api.BaseController):
         else:
             self.notifier.info('image.delete', id)
 
-    def members(self, req, image_id):
+    def members(self, req, image_uuid):
         """
         Return a list of dictionaries indicating the members of the
         image, i.e., those tenants the image is shared with.
 
         :param req: the Request object coming from the wsgi layer
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
         :retval The response body is a mapping of the following form::
 
             {'members': [
@@ -626,9 +626,9 @@ class Controller(api.BaseController):
         """
         try:
             members = registry.get_image_members(self.options, req.context,
-                                                 image_id)
+                                                 image_uuid)
         except exception.NotFound:
-            msg = _("Image with identifier %s not found") % image_id
+            msg = _("Image with identifier %s not found") % image_uuid
             logger.debug(msg)
             raise HTTPNotFound(msg, request=req, content_type='text/plain')
         except exception.NotAuthorized:
@@ -646,7 +646,7 @@ class Controller(api.BaseController):
         :retval The response body is a mapping of the following form::
 
             {'shared_images': [
-                {'image_id': <IMAGE>,
+                {'image_uuid': <IMAGE>,
                  'can_share': <SHARE_PERMISSION>, ...}, ...
             ]}
         """
@@ -682,7 +682,7 @@ class Controller(api.BaseController):
             raise HTTPBadRequest(msg, request=request,
                                  content_type='text/plain')
 
-    def replace_members(self, req, image_id, body):
+    def replace_members(self, req, image_uuid, body):
         """
         Replaces the members of the image with those specified in the
         body.  The body is a dict with the following format::
@@ -699,7 +699,7 @@ class Controller(api.BaseController):
 
         try:
             registry.replace_members(self.options, req.context,
-                                     image_id, body)
+                                     image_uuid, body)
         except exception.NotFound, e:
             msg = "%s" % e
             logger.debug(msg)
@@ -711,7 +711,7 @@ class Controller(api.BaseController):
 
         return HTTPNoContent()
 
-    def add_member(self, req, image_id, member, body=None):
+    def add_member(self, req, image_uuid, member, body=None):
         """
         Adds a membership to the image, or updates an existing one.
         If a body is present, it is a dict with the following format::
@@ -734,7 +734,7 @@ class Controller(api.BaseController):
         if body and 'member' in body and 'can_share' in body['member']:
             can_share = bool(body['member']['can_share'])
         try:
-            registry.add_member(self.options, req.context, image_id, member,
+            registry.add_member(self.options, req.context, image_uuid, member,
                                 can_share)
         except exception.NotFound, e:
             msg = "%s" % e
@@ -747,7 +747,7 @@ class Controller(api.BaseController):
 
         return HTTPNoContent()
 
-    def delete_member(self, req, image_id, member):
+    def delete_member(self, req, image_uuid, member):
         """
         Removes a membership from the image.
         """
@@ -758,7 +758,7 @@ class Controller(api.BaseController):
 
         try:
             registry.delete_member(self.options, req.context,
-                                   image_id, member)
+                                   image_uuid, member)
         except exception.NotFound, e:
             msg = "%s" % e
             logger.debug(msg)
@@ -817,7 +817,7 @@ class ImageSerializer(wsgi.JSONResponseSerializer):
 
     def _get_image_location(self, image_meta):
         """Build a relative url to reach the image defined by image_meta."""
-        return "/v1/images/%s" % image_meta['id']
+        return "/v1/images/%s" % image_meta['uuid']
 
     def meta(self, response, result):
         image_meta = result['image_meta']

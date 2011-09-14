@@ -72,13 +72,13 @@ class Store(object):
         """
         raise exception.StoreAddDisabled
 
-    def add(self, image_id, image_file, image_size):
+    def add(self, image_uuid, image_file, image_size):
         """
         Stores an image file with supplied identifier to the backend
         storage system and returns an `glance.store.ImageAddResult` object
         containing information about the stored image.
 
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
         :param image_file: The image data to write, as a file-like object
         :param image_size: The size of the image data to write, in bytes
 

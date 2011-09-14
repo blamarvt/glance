@@ -33,7 +33,7 @@ from glance.registry.db import api as db_api
 
 logger = logging.getLogger('glance.registry.server')
 
-DISPLAY_FIELDS_IN_INDEX = ['id', 'name', 'size',
+DISPLAY_FIELDS_IN_INDEX = ['uuid', 'name', 'size',
                            'disk_format', 'container_format',
                            'checksum']
 
@@ -41,7 +41,7 @@ SUPPORTED_FILTERS = ['name', 'status', 'container_format', 'disk_format',
                      'size_min', 'size_max']
 
 SUPPORTED_SORT_KEYS = ('name', 'status', 'container_format', 'disk_format',
-                       'size', 'id', 'created_at', 'updated_at')
+                       'size', 'uuid', 'created_at', 'updated_at')
 
 SUPPORTED_SORT_DIRS = ('asc', 'desc')
 
@@ -77,7 +77,7 @@ class Controller(object):
         Where image_list is a sequence of mappings::
 
             {
-            'id': <ID>,
+            'uuid': <ID>,
             'name': <NAME>,
             'size': <SIZE>,
             'disk_format': <DISK_FORMAT>,
@@ -256,16 +256,18 @@ class Controller(object):
 
     def show(self, req, id):
         """Return data about the given image id."""
+        image_uuid = id
+
         try:
-            image = db_api.image_get(req.context, id)
+            image = db_api.image_get(req.context, image_uuid)
         except exception.NotFound:
             raise exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -280,19 +282,21 @@ class Controller(object):
 
         :retval Returns 200 if delete was successful, a fault if not.
         """
+        image_uuid = id
+
         if req.context.read_only:
             raise exc.HTTPForbidden()
 
         try:
-            db_api.image_destroy(req.context, id)
+            db_api.image_destroy(req.context, image_uuid)
         except exception.NotFound:
             return exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -305,7 +309,7 @@ class Controller(object):
 
         :retval Returns the newly-created image information as a mapping,
                 which will include the newly-created image's internal id
-                in the 'id' field
+                in the 'uuid' field
         """
         if req.context.read_only:
             raise exc.HTTPForbidden()
@@ -345,6 +349,7 @@ class Controller(object):
         if req.context.read_only:
             raise exc.HTTPForbidden()
 
+        image_uuid = id
         image_data = body['image']
 
         # Prohibit modification of 'owner'
@@ -353,13 +358,13 @@ class Controller(object):
 
         purge_props = req.headers.get("X-Glance-Registry-Purge-Props", "false")
         try:
-            logger.debug(_("Updating image %(id)s with metadata: "
+            logger.debug(_("Updating image %(image_uuid)s with metadata: "
                            "%(image_data)r") % locals())
             if purge_props == "true":
-                updated_image = db_api.image_update(req.context, id,
+                updated_image = db_api.image_update(req.context, image_uuid,
                                                     image_data, True)
             else:
-                updated_image = db_api.image_update(req.context, id,
+                updated_image = db_api.image_update(req.context, image_uuid,
                                                     image_data)
             return dict(image=make_image_dict(updated_image))
         except exception.Invalid, e:
@@ -374,28 +379,28 @@ class Controller(object):
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(image_uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound(body='Image not found',
                                request=req,
                                content_type='text/plain')
 
-    def members(self, req, image_id):
+    def members(self, req, image_uuid):
         """
         Get the members of an image.
         """
         try:
-            image = db_api.image_get(req.context, image_id)
+            image = db_api.image_get(req.context, image_uuid)
         except exception.NotFound:
             raise exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(image_uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': image_id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -417,10 +422,10 @@ class Controller(object):
             raise exc.HTTPBadRequest(explanation=msg)
 
         return dict(shared_images=make_member_list(memberships,
-                                                   image_id='image_id',
+                                                   image_uuid='image_uuid',
                                                    can_share='can_share'))
 
-    def replace_members(self, req, image_id, body):
+    def replace_members(self, req, image_uuid, body):
         """
         Replaces the members of the image with those specified in the
         body.  The body is a dict with the following format::
@@ -438,15 +443,15 @@ class Controller(object):
         # Make sure the image exists
         session = db_api.get_session()
         try:
-            image = db_api.image_get(req.context, image_id, session=session)
+            image = db_api.image_get(req.context, image_uuid, session=session)
         except exception.NotFound:
             raise exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(image_uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': image_id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -467,7 +472,7 @@ class Controller(object):
         # Walk through the incoming memberships
         for memb in memb_list:
             try:
-                datum = dict(image_id=image['id'],
+                datum = dict(image_uuid=image['uuid'],
                              member=memb['member_id'],
                              can_share=None)
             except Exception, e:
@@ -482,7 +487,7 @@ class Controller(object):
             # Try to find the corresponding membership
             try:
                 membership = db_api.image_member_find(req.context,
-                                                      datum['image_id'],
+                                                      datum['image_uuid'],
                                                       datum['member'],
                                                       session=session)
 
@@ -490,7 +495,7 @@ class Controller(object):
                 if datum['can_share'] is None:
                     datum['can_share'] = membership['can_share']
 
-                existing[membership['id']] = {
+                existing[membership['uuid']] = {
                     'values': datum,
                     'membership': membership,
                     }
@@ -503,9 +508,9 @@ class Controller(object):
         # memberships to modify.  Let's start by walking through all
         # the existing image memberships...
         for memb in image['members']:
-            if memb['id'] in existing:
+            if memb['uuid'] in existing:
                 # Just update the membership in place
-                update = existing[memb['id']]['values']
+                update = existing[memb['uuid']]['values']
                 db_api.image_member_update(req.context, memb, update,
                                            session=session)
             else:
@@ -519,7 +524,7 @@ class Controller(object):
         # Make an appropriate result
         return exc.HTTPNoContent()
 
-    def add_member(self, req, image_id, member, body=None):
+    def add_member(self, req, image_uuid, member, body=None):
         """
         Adds a membership to the image, or updates an existing one.
         If a body is present, it is a dict with the following format::
@@ -539,15 +544,15 @@ class Controller(object):
 
         # Make sure the image exists
         try:
-            image = db_api.image_get(req.context, image_id)
+            image = db_api.image_get(req.context, image_uuid)
         except exception.NotFound:
             raise exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(image_uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': image_id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -569,21 +574,21 @@ class Controller(object):
         try:
             session = db_api.get_session()
             membership = db_api.image_member_find(req.context,
-                                                  image_id, member,
+                                                  image_uuid, member,
                                                   session=session)
             if can_share is not None:
                 values = dict(can_share=can_share)
                 db_api.image_member_update(req.context, membership, values,
                                            session=session)
         except exception.NotFound:
-            values = dict(image_id=image['id'], member=member,
+            values = dict(image_uuid=image['uuid'], member=member,
                           can_share=bool(can_share))
             db_api.image_member_create(req.context, values, session=session)
 
         # Make an appropriate result
         return exc.HTTPNoContent()
 
-    def delete_member(self, req, image_id, member):
+    def delete_member(self, req, image_uuid, member):
         """
         Removes a membership from the image.
         """
@@ -594,15 +599,15 @@ class Controller(object):
 
         # Make sure the image exists
         try:
-            image = db_api.image_get(req.context, image_id)
+            image = db_api.image_get(req.context, image_uuid)
         except exception.NotFound:
             raise exc.HTTPNotFound()
         except exception.NotAuthorized:
             # If it's private and doesn't belong to them, don't let on
             # that it exists
-            msg = _("Access by %(user)s to image %(id)s "
+            msg = _("Access by %(user)s to image %(image_uuid)s "
                     "denied") % ({'user': req.context.user,
-                    'id': image_id})
+                    'uuid': image_uuid})
             logger.info(msg)
             raise exc.HTTPNotFound()
 
@@ -614,7 +619,7 @@ class Controller(object):
         try:
             session = db_api.get_session()
             member_ref = db_api.image_member_find(req.context,
-                                                  image_id,
+                                                  image_uuid,
                                                   member,
                                                   session=session)
             db_api.image_member_delete(req.context,
@@ -645,16 +650,16 @@ class API(wsgi.Router):
         mapper.connect("/", controller=resource, action="index")
         mapper.connect("/shared-images/{member}",
                        controller=resource, action="shared_images")
-        mapper.connect("/images/{image_id}/members",
+        mapper.connect("/images/{image_uuid}/members",
                        controller=resource, action="members",
                        conditions=dict(method=["GET"]))
-        mapper.connect("/images/{image_id}/members",
+        mapper.connect("/images/{image_uuid}/members",
                        controller=resource, action="replace_members",
                        conditions=dict(method=["PUT"]))
-        mapper.connect("/images/{image_id}/members/{member}",
+        mapper.connect("/images/{image_uuid}/members/{member}",
                        controller=resource, action="add_member",
                        conditions=dict(method=["PUT"]))
-        mapper.connect("/images/{image_id}/members/{member}",
+        mapper.connect("/images/{image_uuid}/members/{member}",
                        controller=resource, action="delete_member",
                        conditions=dict(method=["DELETE"]))
         super(API, self).__init__(mapper)

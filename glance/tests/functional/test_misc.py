@@ -45,6 +45,7 @@ class TestMiscellaneous(functional.FunctionalTest):
         # attribute and no custom properties. Verify a 200 OK is returned
         image_data = "*" * FIVE_KB
         headers = {'Content-Type': 'application/octet-stream',
+                   'X-Image-Meta-UUID': '1',
                    'X-Image-Meta-Name': 'Image1',
                    'X-Image-Meta-Is-Public': 'True'}
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
@@ -60,7 +61,7 @@ class TestMiscellaneous(functional.FunctionalTest):
         self.assertEqual(data['image']['is_public'], True)
 
         # 2. REMOVE the image from the filesystem
-        image_path = "%s/images/%s" % (self.test_dir, data['image']['id'])
+        image_path = "%s/images/%s" % (self.test_dir, data['image']['uuid'])
         os.remove(image_path)
 
         # 3. HEAD /images/1
@@ -135,7 +136,7 @@ class TestMiscellaneous(functional.FunctionalTest):
             image_file.flush()
             image_file_name = image_file.name
             cmd = "bin/glance --port=%d add is_public=True name=MyImage "\
-                  "size=12345 < %s" % (self.api_port, image_file_name)
+                  "size=12345 uuid=1 < %s" % (self.api_port, image_file_name)
 
             exitcode, out, err = execute(cmd)
 

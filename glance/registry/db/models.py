@@ -31,6 +31,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 import glance.registry.db.api
 from glance.common import exception
+from glance.common import utils
+
 
 BASE = declarative_base()
 
@@ -96,7 +98,7 @@ class Image(BASE, ModelBase):
     """Represents an image in the datastore"""
     __tablename__ = 'images'
 
-    id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), primary_key=True, default=utils.generate_uuid)
     name = Column(String(255))
     disk_format = Column(String(20))
     container_format = Column(String(20))
@@ -111,10 +113,10 @@ class Image(BASE, ModelBase):
 class ImageProperty(BASE, ModelBase):
     """Represents an image properties in the datastore"""
     __tablename__ = 'image_properties'
-    __table_args__ = (UniqueConstraint('image_id', 'name'), {})
+    __table_args__ = (UniqueConstraint('image_uuid', 'name'), {})
 
-    id = Column(Integer, primary_key=True)
-    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    uuid = Column(String(36), primary_key=True, default=utils.generate_uuid)
+    image_uuid = Column(String(36), ForeignKey('images.uuid'), nullable=False)
     image = relationship(Image, backref=backref('properties'))
 
     name = Column(String(255), index=True, nullable=False)
@@ -124,10 +126,10 @@ class ImageProperty(BASE, ModelBase):
 class ImageMember(BASE, ModelBase):
     """Represents an image members in the datastore"""
     __tablename__ = 'image_members'
-    __table_args__ = (UniqueConstraint('image_id', 'member'), {})
+    __table_args__ = (UniqueConstraint('image_uuid', 'member'), {})
 
-    id = Column(Integer, primary_key=True)
-    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    uuid = Column(Integer, primary_key=True, default=utils.generate_uuid)
+    image_uuid = Column(String(36), ForeignKey('images.uuid'), nullable=False)
     image = relationship(Image, backref=backref('members'))
 
     member = Column(String(255), nullable=False)

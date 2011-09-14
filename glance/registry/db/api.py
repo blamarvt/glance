@@ -42,7 +42,7 @@ BASE = models.BASE
 logger = None
 
 # attributes common to all models
-BASE_MODEL_ATTRS = set(['id', 'created_at', 'updated_at', 'deleted_at',
+BASE_MODEL_ATTRS = set(['uuid', 'created_at', 'updated_at', 'deleted_at',
                         'deleted'])
 
 IMAGE_ATTRS = BASE_MODEL_ATTRS | set(['name', 'status', 'size',
@@ -107,20 +107,20 @@ def image_create(context, values):
     return _image_update(context, values, None, False)
 
 
-def image_update(context, image_id, values, purge_props=False):
+def image_update(context, image_uuid, values, purge_props=False):
     """
     Set the given properties on an image and update it.
 
     :raises NotFound if image does not exist.
     """
-    return _image_update(context, values, image_id, purge_props)
+    return _image_update(context, values, image_uuid, purge_props)
 
 
-def image_destroy(context, image_id):
+def image_destroy(context, image_uuid):
     """Destroy the image or raise if it does not exist."""
     session = get_session()
     with session.begin():
-        image_ref = image_get(context, image_id, session=session)
+        image_ref = image_get(context, image_uuid, session=session)
 
         # Perform authorization check
         check_mutate_authorization(context, image_ref)
@@ -134,28 +134,21 @@ def image_destroy(context, image_id):
             image_member_delete(context, memb_ref, session=session)
 
 
-def image_get(context, image_id, session=None):
+def image_get(context, image_uuid, session=None):
     """Get an image or raise if it does not exist."""
     session = session or get_session()
-    try:
-        #NOTE(bcwaldon): this is to prevent false matches when mysql compares
-        # an integer to a string that begins with that integer
-        image_id = int(image_id)
-    except (TypeError, ValueError):
-        raise exception.NotFound("No image found")
-
     try:
         query = session.query(models.Image).\
                         options(joinedload(models.Image.properties)).\
                         options(joinedload(models.Image.members)).\
-                        filter_by(id=image_id)
+                        filter_by(uuid=image_uuid)
 
         if not can_show_deleted(context):
             query = query.filter_by(deleted=False)
 
         image = query.one()
     except exc.NoResultFound:
-        raise exception.NotFound("No image found with ID %s" % image_id)
+        raise exception.NotFound("No image found with ID %s" % image_uuid)
 
     # Make sure they can look at it
     if not context.is_image_visible(image):
@@ -201,7 +194,7 @@ def image_get_all(context, filters=None, marker=None, limit=None,
     sort_key_attr = getattr(models.Image, sort_key)
 
     query = query.order_by(sort_dir_func(sort_key_attr)).\
-                  order_by(sort_dir_func(models.Image.id))
+                  order_by(sort_dir_func(models.Image.uuid))
 
     if 'size_min' in filters:
         query = query.filter(models.Image.size >= filters['size_min'])
@@ -238,12 +231,12 @@ def image_get_all(context, filters=None, marker=None, limit=None,
             query = query.filter(
                 or_(sort_key_attr < marker_value,
                     and_(sort_key_attr == marker_value,
-                         models.Image.id < marker)))
+                         models.Image.uuid < marker)))
         else:
             query = query.filter(
                 or_(sort_key_attr > marker_value,
                     and_(sort_key_attr == marker_value,
-                         models.Image.id > marker)))
+                         models.Image.uuid > marker)))
 
     if limit != None:
         query = query.limit(limit)
@@ -299,13 +292,13 @@ def validate_image(values):
             raise exception.Invalid(msg)
 
 
-def _image_update(context, values, image_id, purge_props=False):
+def _image_update(context, values, image_uuid, purge_props=False):
     """
     Used internally by image_create and image_update
 
     :param context: Request context
     :param values: A dict of attributes to set
-    :param image_id: If None, create the image, otherwise, find and update it
+    :param image_uuid: If None, create the image, otherwise, find and update it
     """
     session = get_session()
     with session.begin():
@@ -318,8 +311,8 @@ def _image_update(context, values, image_id, purge_props=False):
         # not a dict.
         properties = values.pop('properties', {})
 
-        if image_id:
-            image_ref = image_get(context, image_id, session=session)
+        if image_uuid:
+            image_ref = image_get(context, image_uuid, session=session)
 
             # Perform authorization check
             check_mutate_authorization(context, image_ref)
@@ -334,7 +327,7 @@ def _image_update(context, values, image_id, purge_props=False):
         if 'owner' in values and not values['owner']:
             values['owner'] = None
 
-        if image_id:
+        if image_uuid:
             # Don't drop created_at if we're passing it in...
             _drop_protected_attrs(models.Image, values)
         image_ref.update(values)
@@ -349,12 +342,12 @@ def _image_update(context, values, image_id, purge_props=False):
             image_ref.save(session=session)
         except IntegrityError, e:
             raise exception.Duplicate("Image ID %s already exists!"
-                                      % values['id'])
+                                      % values['uuid'])
 
         _set_properties_for_image(context, image_ref, properties, purge_props,
                                   session)
 
-    return image_get(context, image_ref.id)
+    return image_get(context, image_ref.uuid)
 
 
 def _set_properties_for_image(context, image_ref, properties,
@@ -372,7 +365,7 @@ def _set_properties_for_image(context, image_ref, properties,
         orig_properties[prop_ref.name] = prop_ref
 
     for name, value in properties.iteritems():
-        prop_values = {'image_id': image_ref.id,
+        prop_values = {'image_uuid': image_ref.uuid,
                        'name': name,
                        'value': value}
         if name in orig_properties:
@@ -457,7 +450,7 @@ def image_member_get(context, member_id, session=None):
     try:
         query = session.query(models.ImageMember).\
                         options(joinedload(models.ImageMember.image)).\
-                        filter_by(id=member_id)
+                        filter_by(uuid=member_id)
 
         if not can_show_deleted(context):
             query = query.filter_by(deleted=False)
@@ -474,7 +467,7 @@ def image_member_get(context, member_id, session=None):
     return member
 
 
-def image_member_find(context, image_id, member, session=None):
+def image_member_find(context, image_uuid, member, session=None):
     """Find a membership association between image and member."""
     session = session or get_session()
     try:
@@ -482,7 +475,7 @@ def image_member_find(context, image_id, member, session=None):
         # RequestContext.is_image_visible(), so avoid recursive calls
         query = session.query(models.ImageMember).\
                         options(joinedload(models.ImageMember.image)).\
-                        filter_by(image_id=image_id).\
+                        filter_by(image_uuid=image_uuid).\
                         filter_by(member=member)
 
         if not can_show_deleted(context):
@@ -492,7 +485,7 @@ def image_member_find(context, image_id, member, session=None):
 
     except exc.NoResultFound:
         raise exception.NotFound("No membership found for image %s member %s" %
-                                 (image_id, member))
+                                 (image_uuid, member))
 
 
 def image_member_get_memberships(context, member, marker=None, limit=None,
@@ -523,7 +516,7 @@ def image_member_get_memberships(context, member, marker=None, limit=None,
     sort_key_attr = getattr(models.ImageMember, sort_key)
 
     query = query.order_by(sort_dir_func(sort_key_attr)).\
-                  order_by(sort_dir_func(models.ImageMember.id))
+                  order_by(sort_dir_func(models.ImageMember.uuid))
 
     if marker != None:
         # memberships returned should be created before the membership
@@ -534,12 +527,12 @@ def image_member_get_memberships(context, member, marker=None, limit=None,
             query = query.filter(
                 or_(sort_key_attr < marker_value,
                     and_(sort_key_attr == marker_value,
-                         models.ImageMember.id < marker)))
+                         models.ImageMember.uuid < marker)))
         else:
             query = query.filter(
                 or_(sort_key_attr > marker_value,
                     and_(sort_key_attr == marker_value,
-                         models.ImageMember.id > marker)))
+                         models.ImageMember.uuid > marker)))
 
     if limit != None:
         query = query.limit(limit)

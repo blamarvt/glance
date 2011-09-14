@@ -79,12 +79,12 @@ class TestStore(unittest.TestCase):
     def test_add(self):
         """Test that we can add an image via the filesystem backend"""
         ChunkedFile.CHUNKSIZE = 1024
-        expected_image_id = 42
+        expected_image_uuid = 42
         expected_file_size = 1024 * 5  # 5K
         expected_file_contents = "*" * expected_file_size
         expected_checksum = hashlib.md5(expected_file_contents).hexdigest()
         expected_location = "file://%s/%s" % (stubs.FAKE_FILESYSTEM_ROOTDIR,
-                                              expected_image_id)
+                                              expected_image_uuid)
         image_file = StringIO.StringIO(expected_file_contents)
 
         location, size, checksum = self.store.add(42, image_file,

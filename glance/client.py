@@ -70,28 +70,28 @@ class V1Client(base_client.BaseClient):
         data = json.loads(res.read())['images']
         return data
 
-    def get_image(self, image_id):
+    def get_image(self, image_uuid):
         """
         Returns a tuple with the image's metadata and the raw disk image as
         a mime-encoded blob stream for the supplied opaque image identifier.
 
-        :param image_id: The opaque image identifier
+        :param image_uuid: The opaque image identifier
 
         :retval Tuple containing (image_meta, image_blob)
         :raises exception.NotFound if image is not found
         """
-        res = self.do_request("GET", "/images/%s" % image_id)
+        res = self.do_request("GET", "/images/%s" % image_uuid)
 
         image = utils.get_image_meta_from_headers(res)
         return image, base_client.ImageBodyIterator(res)
 
-    def get_image_meta(self, image_id):
+    def get_image_meta(self, image_uuid):
         """
         Returns a mapping of image metadata from Registry
 
         :raises exception.NotFound if image is not in registry
         """
-        res = self.do_request("HEAD", "/images/%s" % image_id)
+        res = self.do_request("HEAD", "/images/%s" % image_uuid)
 
         image = utils.get_image_meta_from_headers(res)
         return image
@@ -152,7 +152,7 @@ class V1Client(base_client.BaseClient):
         data = json.loads(res.read())
         return data['image']
 
-    def update_image(self, image_id, image_meta=None, image_data=None):
+    def update_image(self, image_uuid, image_meta=None, image_data=None):
         """
         Updates Glance's information about an image
         """
@@ -171,15 +171,15 @@ class V1Client(base_client.BaseClient):
         else:
             body = None
 
-        res = self.do_request("PUT", "/images/%s" % image_id, body, headers)
+        res = self.do_request("PUT", "/images/%s" % image_uuid, body, headers)
         data = json.loads(res.read())
         return data['image']
 
-    def delete_image(self, image_id):
+    def delete_image(self, image_uuid):
         """
         Deletes Glance's information about an image
         """
-        self.do_request("DELETE", "/images/%s" % image_id)
+        self.do_request("DELETE", "/images/%s" % image_uuid)
         return True
 
     def get_cached_images(self, **kwargs):
@@ -232,11 +232,11 @@ class V1Client(base_client.BaseClient):
         data = json.loads(res.read())['cached_images']
         return data
 
-    def purge_cached_image(self, image_id):
+    def purge_cached_image(self, image_uuid):
         """
         Delete a specified image from the cache
         """
-        self.do_request("DELETE", "/cached_images/%s" % image_id)
+        self.do_request("DELETE", "/cached_images/%s" % image_uuid)
         return True
 
     def clear_cached_images(self):
@@ -270,13 +270,13 @@ class V1Client(base_client.BaseClient):
         num_reaped = data['num_reaped']
         return num_reaped
 
-    def prefetch_cache_image(self, image_id):
+    def prefetch_cache_image(self, image_uuid):
         """
         Pre-fetch a specified image from the cache
         """
-        res = self.do_request("HEAD", "/images/%s" % image_id)
+        res = self.do_request("HEAD", "/images/%s" % image_uuid)
         image = utils.get_image_meta_from_headers(res)
-        self.do_request("PUT", "/cached_images/%s" % image_id)
+        self.do_request("PUT", "/cached_images/%s" % image_uuid)
         return True
 
     def get_prefetching_cache_images(self, **kwargs):
@@ -297,9 +297,9 @@ class V1Client(base_client.BaseClient):
         data = json.loads(res.read())['cached_images']
         return data
 
-    def get_image_members(self, image_id):
+    def get_image_members(self, image_uuid):
         """Returns a mapping of image memberships from Registry"""
-        res = self.do_request("GET", "/images/%s/members" % image_id)
+        res = self.do_request("GET", "/images/%s/members" % image_uuid)
         data = json.loads(res.read())['members']
         return data
 
@@ -322,11 +322,11 @@ class V1Client(base_client.BaseClient):
             validated.append(assoc_data)
         return validated
 
-    def replace_members(self, image_id, *assocs):
+    def replace_members(self, image_uuid, *assocs):
         """
-        Replaces the membership associations for a given image_id.
+        Replaces the membership associations for a given image_uuid.
         Each subsequent argument is a dictionary mapping containing a
-        'member_id' that should have access to the image_id.  A
+        'member_id' that should have access to the image_uuid.  A
         'can_share' boolean can also be specified to allow the member
         to further share the image.  An example invocation allowing
         'rackspace' to access image 1 and 'google' to access image 1
@@ -338,13 +338,13 @@ class V1Client(base_client.BaseClient):
         """
         # Understand the associations
         body = json.dumps(self._validate_assocs(assocs))
-        self.do_request("PUT", "/images/%s/members" % image_id, body,
+        self.do_request("PUT", "/images/%s/members" % image_uuid, body,
                         {'content-type': 'application/json'})
         return True
 
-    def add_member(self, image_id, member_id, can_share=None):
+    def add_member(self, image_uuid, member_id, can_share=None):
         """
-        Adds a membership association between image_id and member_id.
+        Adds a membership association between image_uuid and member_id.
         If can_share is not specified and the association already
         exists, no change is made; if the association does not already
         exist, one is created with can_share defaulting to False.
@@ -366,10 +366,10 @@ class V1Client(base_client.BaseClient):
             headers['content-type'] = 'application/json'
 
         self.do_request("PUT", "/images/%s/members/%s" %
-                        (image_id, member_id), body, headers)
+                        (image_uuid, member_id), body, headers)
         return True
 
-    def delete_member(self, image_id, member_id):
+    def delete_member(self, image_uuid, member_id):
         """
         Deletes the membership assocation.  If the
         association does not exist, no action is taken; otherwise, the
@@ -382,7 +382,7 @@ class V1Client(base_client.BaseClient):
             c.delete_member(2, 'google')
         """
         self.do_request("DELETE", "/images/%s/members/%s" %
-                        (image_id, member_id))
+                        (image_uuid, member_id))
         return True
 
 

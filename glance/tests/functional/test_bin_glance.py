@@ -68,7 +68,7 @@ class TestBinGlance(functional.FunctionalTest):
             image_file.flush()
             image_file_name = image_file.name
             cmd = "bin/glance --port=%d add is_public=True"\
-                  " name=MyImage < %s" % (api_port, image_file_name)
+                  " uuid=1 name=MyImage < %s" % (api_port, image_file_name)
 
             exitcode, out, err = execute(cmd)
 
@@ -86,7 +86,7 @@ class TestBinGlance(functional.FunctionalTest):
 
         line = lines[0]
 
-        image_id, name, disk_format, container_format, size = \
+        image_uuid, name, disk_format, container_format, size = \
             [c.strip() for c in line.split()]
         self.assertEqual('MyImage', name)
 
@@ -141,7 +141,7 @@ class TestBinGlance(functional.FunctionalTest):
         self.assertEqual('', out.strip())
 
         # 1. Add public image
-        cmd = "bin/glance --port=%d add name=MyImage" % api_port
+        cmd = "bin/glance --port=%d add uuid=1 name=MyImage" % api_port
 
         exitcode, out, err = execute(cmd)
 
@@ -232,7 +232,7 @@ class TestBinGlance(functional.FunctionalTest):
             image_file.flush()
             image_file_name = image_file.name
             cmd = ("bin/glance --port=%d add name=Jonas is_public=True "
-                   "disk_format=qcow2 container_format=bare < %s"
+                   "uuid=1 disk_format=qcow2 container_format=bare < %s"
                    % (api_port, image_file_name))
 
             exitcode, out, err = execute(cmd, raise_error=False)
@@ -277,7 +277,7 @@ class TestBinGlance(functional.FunctionalTest):
         # 1. Add some images
         for i in range(1, 5):
             cmd = "bin/glance --port=%d add is_public=True name=MyName " \
-                  " foo=bar" % api_port
+                  " uuid=%s foo=bar " % (api_port, i)
             exitcode, out, err = execute(cmd)
 
             self.assertEqual(0, exitcode)
@@ -317,9 +317,9 @@ class TestBinGlance(functional.FunctionalTest):
         # 1. Add some images
         _add_cmd = "bin/glance --port=%d add is_public=True" % api_port
         _add_args = [
-            "name=Name1 disk_format=vhd container_format=ovf foo=bar",
-            "name=Name2 disk_format=ami container_format=ami foo=bar",
-            "name=Name3 disk_format=vhd container_format=ovf foo=baz",
+            "name=Name1 uuid=1 disk_format=vhd container_format=ovf foo=bar",
+            "name=Name2 uuid=2 disk_format=ami container_format=ami foo=bar",
+            "name=Name3 uuid=3 disk_format=vhd container_format=ovf foo=baz",
         ]
 
         for i, args in enumerate(_add_args):
@@ -420,11 +420,11 @@ class TestBinGlance(functional.FunctionalTest):
         # 1. Add some images
         _add_cmd = "bin/glance --port=%d add is_public=True" % self.api_port
         _add_args = [
-            "name=Name1 disk_format=ami container_format=ami",
-            "name=Name2 disk_format=vhd container_format=ovf",
-            "name=Name3 disk_format=ami container_format=ami",
-            "name=Name4 disk_format=ami container_format=ami",
-            "name=Name5 disk_format=vhd container_format=ovf",
+            "name=Name1 uuid=1 disk_format=ami container_format=ami",
+            "name=Name2 uuid=2 disk_format=vhd container_format=ovf",
+            "name=Name3 uuid=3 disk_format=ami container_format=ami",
+            "name=Name4 uuid=4 disk_format=ami container_format=ami",
+            "name=Name5 uuid=5 disk_format=vhd container_format=ovf",
         ]
 
         for i, args in enumerate(_add_args):
@@ -499,11 +499,11 @@ class TestBinGlance(functional.FunctionalTest):
         # 1. Add some images
         _add_cmd = "bin/glance --port=%d add is_public=True" % self.api_port
         _add_args = [
-            "name=Name1 disk_format=ami container_format=ami",
-            "name=Name4 disk_format=vhd container_format=ovf",
-            "name=Name3 disk_format=ami container_format=ami",
-            "name=Name2 disk_format=ami container_format=ami",
-            "name=Name5 disk_format=vhd container_format=ovf",
+            "name=Name1 uuid=1 disk_format=ami container_format=ami",
+            "name=Name4 uuid=2 disk_format=vhd container_format=ovf",
+            "name=Name3 uuid=3 disk_format=ami container_format=ami",
+            "name=Name2 uuid=4 disk_format=ami container_format=ami",
+            "name=Name5 uuid=5 disk_format=vhd container_format=ovf",
         ]
 
         for i, args in enumerate(_add_args):

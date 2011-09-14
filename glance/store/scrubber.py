@@ -39,6 +39,7 @@ logger = logging.getLogger('glance.store.scrubber')
 
 class Daemon(object):
     def __init__(self, wakeup_time=300, threads=1000):
+        raise Exception("__init__")
         logger.info(_("Starting Daemon: wakeup_time=%(wakeup_time)s "
                       "threads=%(threads)s") % locals())
         self.wakeup_time = wakeup_time
@@ -84,6 +85,7 @@ class Scrubber(object):
         store.create_stores(options)
 
     def run(self, pool, event=None):
+        raise Exception("here")
         now = time.time()
 
         if not os.path.exists(self.datadir):
@@ -160,7 +162,7 @@ class Scrubber(object):
             if delete_time + self.cleanup_time > now:
                 continue
 
-            delete_work.append((int(pending_delete['id']),
+            delete_work.append((int(pending_delete['uuid']),
                                 pending_delete['location'],
                                 now))
 
