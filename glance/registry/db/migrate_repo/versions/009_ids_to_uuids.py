@@ -15,7 +15,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import migrate
 import sqlalchemy
+
+
+images_uuid_column = sqlalchemy.Column('uuid',
+                                       sqlalchemy.String(36))
 
 
 def upgrade(migrate_engine):
@@ -23,6 +28,7 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     t_images = sqlalchemy.Table('images', meta, autoload=True)
+    t_images.create_column(images_uuid_column)
 
     t_image_members = sqlalchemy.Table('image_members', meta, autoload=True)
     t_image_members.c.id.alter('uuid', sqlalchemy.String(36))
@@ -30,15 +36,12 @@ def upgrade(migrate_engine):
     t_image_properties = sqlalchemy.Table('image_properties', meta, autoload=True)
     t_image_properties.c.id.alter('uuid', sqlalchemy.String(36))
 
-#    ForeignKeyConstraint([t_images.c.id],
- #                        [t_image_properties.c.image_id]).drop()
-
-#    t_images.c.id.alter(name='uuid', type=String(36))
+#    t_images.c.id.alter('uuid', sqlalchemy.String(36))
 
 #    t_image_properties.c.image_id.alter('image_uuid',
-#                                        String(36),
-#                                        ForeignKey('images.uuid'))
-#
+#                                        sqlalchemy.String(36),
+#                                        sqlalchemy.ForeignKey('images.uuid'))
+
 #    t_image_members.c.image_id.alter('image_uuid',
 #                                     String(36),
 #                                     ForeignKey('images.uuid'))
@@ -47,6 +50,9 @@ def upgrade(migrate_engine):
 def downgrade(migrate_engine):
     meta = sqlalchemy.MetaData()
     meta.bind = migrate_engine
+
+    t_images = sqlalchemy.Table('images', meta, autoload=True)
+    t_images.drop_column(images_uuid_column)
 
     t_image_members = sqlalchemy.Table('image_members', meta, autoload=True)
     t_image_members.c.uuid.alter('id', sqlalchemy.Integer)
