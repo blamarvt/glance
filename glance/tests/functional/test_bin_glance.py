@@ -413,9 +413,9 @@ class TestBinGlance(functional.FunctionalTest):
         self.assertEqual(0, exitcode)
         image_lines = out.split("\n")[2:-1]
         self.assertEqual(3, len(image_lines))
-        self.assertTrue(image_lines[0].startswith('3'))
-        self.assertTrue(image_lines[1].startswith('2'))
-        self.assertTrue(image_lines[2].startswith('1'))
+        self.assertEqual(image_lines[0].split()[0], image_ids[2])
+        self.assertEqual(image_lines[1].split()[0], image_ids[1])
+        self.assertEqual(image_lines[2].split()[0], image_ids[0])
 
         # 10. Check future changes-since
         dt2 = datetime.datetime.utcnow() + datetime.timedelta(1)
