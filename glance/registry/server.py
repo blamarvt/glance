@@ -217,10 +217,6 @@ class Controller(object):
         if marker is None:
             return None
 
-        try:
-            marker = int(marker)
-        except ValueError:
-            raise exc.HTTPBadRequest(_("marker param must be an integer"))
         return marker
 
     def _get_sort_key(self, req):

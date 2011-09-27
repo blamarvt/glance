@@ -111,7 +111,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_index(self):
         """Test correct set of public image returned"""
-        fixture = {'id': 2,
+        fixture = {'id': '2',
                    'name': 'fake image #2'}
         images = self.client.get_images()
         self.assertEquals(len(images), 1)
@@ -431,7 +431,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_index_marker(self):
         """Test correct set of images returned with marker param."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -442,7 +442,7 @@ class TestRegistryClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -457,7 +457,7 @@ class TestRegistryClient(unittest.TestCase):
         self.assertEquals(len(images), 2)
 
         for image in images:
-            self.assertTrue(image['id'] < 4)
+            self.assertTrue(image['id'] < '4')
 
     def test_get_image_index_invalid_marker(self):
         """Test exception is raised when marker is invalid"""
@@ -494,7 +494,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_index_marker_limit(self):
         """Test correct set of images returned with marker/limit params."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -505,7 +505,7 @@ class TestRegistryClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -519,7 +519,7 @@ class TestRegistryClient(unittest.TestCase):
         images = self.client.get_images(marker=3, limit=1)
         self.assertEquals(len(images), 1)
 
-        self.assertEquals(images[0]['id'], 2)
+        self.assertEquals(images[0]['id'], '2')
 
     def test_get_image_index_limit_None(self):
         """Test correct set of images returned with limit param == None."""
@@ -572,7 +572,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_details(self):
         """Tests that the detailed info about public images returned"""
-        fixture = {'id': 2,
+        fixture = {'id': '2',
                    'name': 'fake image #2',
                    'is_public': True,
                    'disk_format': 'vhd',
@@ -590,7 +590,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_details_marker_limit(self):
         """Test correct set of images returned with marker/limit params."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -601,7 +601,7 @@ class TestRegistryClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -615,7 +615,7 @@ class TestRegistryClient(unittest.TestCase):
         images = self.client.get_images_detailed(marker=3, limit=1)
         self.assertEquals(len(images), 1)
 
-        self.assertEquals(images[0]['id'], 2)
+        self.assertEquals(images[0]['id'], '2')
 
     def test_get_image_details_invalid_marker(self):
         """Test exception is raised when marker is invalid"""
@@ -882,7 +882,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image(self):
         """Tests that the detailed info about an image returned"""
-        fixture = {'id': 1,
+        fixture = {'id': '1',
                    'name': 'fake image #1',
                    'is_public': False,
                    'disk_format': 'ami',
@@ -892,7 +892,7 @@ class TestRegistryClient(unittest.TestCase):
                    'location': "swift://user:passwd@acct/container/obj.tar.0",
                    'properties': {'type': 'kernel'}}
 
-        data = self.client.get_image(1)
+        data = self.client.get_image('1')
 
         for k, v in fixture.items():
             el = data[k]
@@ -918,11 +918,8 @@ class TestRegistryClient(unittest.TestCase):
 
         new_image = self.client.add_image(fixture)
 
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image['id'])
-
         # Test all other attributes set
-        data = self.client.get_image(3)
+        data = self.client.get_image(new_image['id'])
 
         for k, v in fixture.items():
             self.assertEquals(v, data[k])
@@ -942,9 +939,6 @@ class TestRegistryClient(unittest.TestCase):
                    'properties': {'distro': 'Ubuntu 10.04 LTS'}}
 
         new_image = self.client.add_image(fixture)
-
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image['id'])
 
         for k, v in fixture.items():
             self.assertEquals(v, new_image[k])
@@ -1131,7 +1125,7 @@ class TestClient(unittest.TestCase):
     def test_get_image(self):
         """Test a simple file backend retrieval works as expected"""
         expected_image = 'chunk00000remainder'
-        expected_meta = {'id': 2,
+        expected_meta = {'id': '2',
                    'name': 'fake image #2',
                    'is_public': True,
                    'disk_format': 'vhd',
@@ -1161,7 +1155,7 @@ class TestClient(unittest.TestCase):
         sorted alphabetically by container_format in
         descending order.
         """
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'ami',
@@ -1172,7 +1166,7 @@ class TestClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'iso',
@@ -1193,7 +1187,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_index(self):
         """Test correct set of public image returned"""
-        fixture = {'id': 2,
+        fixture = {'id': '2',
                    'name': 'fake image #2'}
         images = self.client.get_images()
         self.assertEquals(len(images), 1)
@@ -1203,7 +1197,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_index_marker(self):
         """Test correct set of public images returned with marker param."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1214,7 +1208,7 @@ class TestClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1229,7 +1223,7 @@ class TestClient(unittest.TestCase):
         self.assertEquals(len(images), 2)
 
         for image in images:
-            self.assertTrue(image['id'] < 4)
+            self.assertTrue(image['id'] < '4')
 
     def test_get_image_index_invalid_marker(self):
         """Test exception is raised when marker is invalid"""
@@ -1266,7 +1260,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_index_marker_limit(self):
         """Test correct set of images returned with marker/limit params."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1277,7 +1271,7 @@ class TestClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1291,7 +1285,7 @@ class TestClient(unittest.TestCase):
         images = self.client.get_images(marker=3, limit=1)
         self.assertEquals(len(images), 1)
 
-        self.assertEquals(images[0]['id'], 2)
+        self.assertEquals(images[0]['id'], '2')
 
     def test_get_image_index_by_base_attribute(self):
         """Tests that an index call can be filtered by a base attribute"""
@@ -1314,7 +1308,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_index_by_property(self):
         """Tests that an index call can be filtered by a property"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1330,11 +1324,11 @@ class TestClient(unittest.TestCase):
         images = self.client.get_images(filters=filters)
 
         self.assertEquals(len(images), 1)
-        self.assertEquals(3, images[0]['id'])
+        self.assertEquals('3', images[0]['id'])
 
     def test_get_image_details(self):
         """Tests that the detailed info about public images returned"""
-        expected = {'id': 2,
+        expected = {'id': '2',
                    'name': 'fake image #2',
                    'is_public': True,
                    'disk_format': 'vhd',
@@ -1351,7 +1345,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_details_marker_limit(self):
         """Test detailed calls are filtered by marker/limit params."""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1362,7 +1356,7 @@ class TestClient(unittest.TestCase):
 
         db_api.image_create(self.context, extra_fixture)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1376,7 +1370,7 @@ class TestClient(unittest.TestCase):
         images = self.client.get_images_detailed(marker=3, limit=1)
         self.assertEquals(len(images), 1)
 
-        self.assertEquals(images[0]['id'], 2)
+        self.assertEquals(images[0]['id'], '2')
 
     def test_get_image_details_invalid_marker(self):
         """Test exception is raised when marker is invalid"""
@@ -1386,7 +1380,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_details_by_base_attribute(self):
         """Tests that a detailed call can be filtered by a base attribute"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1470,7 +1464,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_details_by_property(self):
         """Tests that a detailed call can be filtered by a property"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1491,7 +1485,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_bad_filters_with_other_params(self):
         """Tests that a detailed call can be filtered by a property"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1508,7 +1502,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_meta(self):
         """Tests that the detailed info about an image returned"""
-        fixture = {'id': 2,
+        fixture = {'id': '2',
                    'name': 'fake image #2',
                    'is_public': True,
                    'disk_format': 'vhd',
@@ -1524,7 +1518,7 @@ class TestClient(unittest.TestCase):
 
     def test_get_image_iso_meta(self):
         """Tests that the detailed info about an ISO image is returned"""
-        fixture = {'id': 3,
+        fixture = {'id': '3',
                    'name': 'fake iso image',
                    'is_public': False,
                    'disk_format': 'iso',
@@ -1537,11 +1531,8 @@ class TestClient(unittest.TestCase):
         new_image = self.client.add_image(fixture)
         new_image_id = new_image['id']
 
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image_id)
-
         # Test all other attributes set
-        data = self.client.get_image_meta(3)
+        data = self.client.get_image_meta(new_image_id)
 
         for k, v in fixture.items():
             self.assertEquals(v, data[k])
@@ -1575,11 +1566,8 @@ class TestClient(unittest.TestCase):
         new_image = self.client.add_image(fixture)
         new_image_id = new_image['id']
 
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image_id)
-
         # Test all other attributes set
-        data = self.client.get_image_meta(3)
+        data = self.client.get_image_meta(new_image_id)
 
         for k, v in fixture.items():
             self.assertEquals(v, data[k])
@@ -1601,11 +1589,8 @@ class TestClient(unittest.TestCase):
         new_image = self.client.add_image(fixture)
         new_image_id = new_image['id']
 
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image_id)
-
         # Test all other attributes set
-        data = self.client.get_image_meta(3)
+        data = self.client.get_image_meta(new_image_id)
 
         for k, v in fixture.items():
             self.assertEquals(v, data[k])
@@ -1627,11 +1612,8 @@ class TestClient(unittest.TestCase):
         new_image = self.client.add_image(fixture)
         new_image_id = new_image['id']
 
-        # Test ID auto-assigned properly
-        self.assertEquals(3, new_image_id)
-
         # Test all other attributes set
-        data = self.client.get_image_meta(3)
+        data = self.client.get_image_meta(new_image_id)
 
         for k, v in fixture.items():
             self.assertEquals(v, data[k])
@@ -1703,9 +1685,8 @@ class TestClient(unittest.TestCase):
 
         new_image = self.client.add_image(fixture, image_data_fixture)
         new_image_id = new_image['id']
-        self.assertEquals(3, new_image_id)
 
-        new_meta, new_image_chunks = self.client.get_image(3)
+        new_meta, new_image_chunks = self.client.get_image(new_image_id)
 
         new_image_data = ""
         for image_chunk in new_image_chunks:
@@ -1738,12 +1719,11 @@ class TestClient(unittest.TestCase):
 
         new_image = self.client.add_image(fixture, open(tmp_image_filepath))
         new_image_id = new_image['id']
-        self.assertEquals(3, new_image_id)
 
         if os.path.exists(tmp_image_filepath):
             os.unlink(tmp_image_filepath)
 
-        new_meta, new_image_chunks = self.client.get_image(3)
+        new_meta, new_image_chunks = self.client.get_image(new_image_id)
 
         new_image_data = ""
         for image_chunk in new_image_chunks:
@@ -1766,9 +1746,7 @@ class TestClient(unittest.TestCase):
 
         new_image = self.client.add_image(fixture, image_data_fixture)
         new_image_id = new_image['id']
-        self.assertEquals(3, new_image_id)
-
-        new_meta, new_image_chunks = self.client.get_image(3)
+        new_meta, new_image_chunks = self.client.get_image(new_image_id)
 
         new_image_data = ""
         for image_chunk in new_image_chunks:
