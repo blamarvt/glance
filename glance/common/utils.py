@@ -29,6 +29,7 @@ import random
 import subprocess
 import socket
 import sys
+import uuid
 
 from glance.common import exception
 
@@ -74,6 +75,10 @@ def import_object(import_str):
     except ImportError:
         cls = import_class(import_str)
         return cls()
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 
 def isotime(at=None):
