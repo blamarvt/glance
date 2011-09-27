@@ -143,7 +143,9 @@ class TestMigrations(unittest.TestCase):
         cur_version = migration_api.db_version(options)
         self.assertEqual(0, cur_version)
 
+        print options
         for version in xrange(1, TestMigrations.REPOSITORY.latest + 1):
+            print "VERSION: ", version
             migration_api.upgrade(options, version)
             cur_version = migration_api.db_version(options)
             self.assertEqual(cur_version, version)
@@ -152,6 +154,7 @@ class TestMigrations(unittest.TestCase):
         # the downgrade paths.
         for version in reversed(
             xrange(0, TestMigrations.REPOSITORY.latest)):
+            print "VERSION: ", version
             migration_api.downgrade(options, version)
             cur_version = migration_api.db_version(options)
             self.assertEqual(cur_version, version)

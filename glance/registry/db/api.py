@@ -140,7 +140,7 @@ def image_get(context, image_id, session=None):
     try:
         #NOTE(bcwaldon): this is to prevent false matches when mysql compares
         # an integer to a string that begins with that integer
-        image_id = int(image_id)
+        image_id = image_id
     except (TypeError, ValueError):
         raise exception.NotFound("No image found")
 
