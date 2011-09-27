@@ -336,7 +336,6 @@ class TestBinGlance(functional.FunctionalTest):
             self.assertTrue(out.strip().find('Added new image with ID:') > -1)
             image_ids.append(out.strip().split(':')[1].strip())
 
-
         _base_cmd = "bin/glance --port=%d" % api_port
         _index_cmd = "%s index -f" % (_base_cmd,)
 
@@ -485,7 +484,6 @@ class TestBinGlance(functional.FunctionalTest):
             expected_out = 'Added new image with ID: %d' % (i + 1,)
             self.assertTrue(out.strip().find('Added new image with ID:') > -1)
             image_ids.append(out.strip().split(':')[1].strip())
-
 
         # 2. Limit less than total
         cmd = "--limit=3"

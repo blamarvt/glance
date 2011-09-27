@@ -2029,7 +2029,7 @@ class TestGlanceAPI(unittest.TestCase):
         self.assertTrue('location' in res.headers,
                         "'location' not in response headers.\n"
                         "res.headerlist = %r" % res.headerlist)
-        self.assertTrue('/images/%s' % res_body['id'] 
+        self.assertTrue('/images/%s' % res_body['id']
                         in res.headers['location'])
 
     def test_get_index_sort_name_asc(self):

@@ -96,15 +96,15 @@ def _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties):
         new_id = glance.common.utils.generate_uuid()
 
         t_images.update().\
-            where(t_images.c.id==old_id).\
+            where(t_images.c.id == old_id).\
             values(id=new_id).execute()
 
         t_image_members.update().\
-            where(t_image_members.c.image_id==old_id).\
+            where(t_image_members.c.image_id == old_id).\
             values(image_id=new_id).execute()
 
         t_image_properties.update().\
-            where(t_image_properties.c.image_id==old_id).\
+            where(t_image_properties.c.image_id == old_id).\
             values(image_id=new_id).execute()
 
 
@@ -115,15 +115,15 @@ def _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties):
         new_id = 0
 
         t_images.update().\
-            where(t_images.c.id==old_id).\
+            where(t_images.c.id == old_id).\
             values(id=new_id).execute()
 
         t_image_members.update().\
-            where(t_image_members.c.image_id==old_id).\
+            where(t_image_members.c.image_id == old_id).\
             values(image_id=new_id).execute()
 
         t_image_properties.update().\
-            where(t_image_properties.c.image_id==old_id).\
+            where(t_image_properties.c.image_id == old_id).\
             values(image_id=new_id).execute()
 
         new_id += 1
