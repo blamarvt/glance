@@ -19,69 +19,47 @@ import migrate
 import sqlalchemy
 
 import glance.common.utils
+from glance.registry.db.migrate_repo import schema
 
 
 meta = sqlalchemy.MetaData()
 
 
-def _get_table(table_name, metadata):
-    """Return a sqlalchemy Table definition with associated metadata."""
-    return sqlalchemy.Table(table_name, metadata, autoload=True)
+_import_methods = ["_update_all_ids_to_uuids", "_update_all_uuids_to_ids"]
+_update_all_ids_to_uuids, _update_all_uuids_to_ids = \
+    schema.from_migration_import("012_id_to_uuid", _import_methods)
 
 
 def upgrade(migrate_engine):
-    meta.bind = migrate_engine
-
-    t_images = _get_table('images', meta)
-
-    for image in migrate_engine.execute(t_images.select()):
-        old_id = image["id"]
-        new_id = glance.common.utils.generate_uuid()
-
-        query = t_images.update().\
-                    where(t_images.c.id==old_id).\
-                    values(id=new_id)
-
-        migrate_engine.execute(query)
-
-        query = t_image_members.update().\
-                    where(t_image_members.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
-
-        query = t_image_properties.update().\
-                    where(t_image_properties.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
+    if migrate_engine.url.get_dialect().name == "sqlite":
+        return upgrade_sqlite(migrate_engine)
 
 
 def downgrade(migrate_engine):
+    if migrate_engine.url.get_dialect().name == "sqlite":
+        return downgrade_sqlite(migrate_engine)
+
+
+def upgrade_sqlite(migrate_engine):
     meta.bind = migrate_engine
 
     t_images = _get_table('images', meta)
+    t_image_members = _get_table('image_members', meta)
+    t_image_properties = _get_table('image_properties', meta)
 
-    for image in migrate_engine.execute(t_images.select()):
-        old_id = image["id"]
-        new_id = 0
+    _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties)
 
-        query = t_images.update().\
-                    where(t_images.c.id==old_id).\
-                    values(id=new_id)
 
-        migrate_engine.execute(query)
+def downgrade_sqlite(migrate_engine):
+    meta.bind = migrate_engine
 
-        query = t_image_members.update().\
-                    where(t_image_members.c.image_id==old_id).\
-                    values(image_id=new_id)
+    t_images = _get_table('images', meta)
+    t_image_members = _get_table('image_members', meta)
+    t_image_properties = _get_table('image_properties', meta)
 
-        migrate_engine.execute(query)
+    _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties)
 
-        query = t_image_properties.update().\
-                    where(t_image_properties.c.image_id==old_id).\
-                    values(image_id=new_id)
 
-        migrate_engine.execute(query)
-
-        new_id += 1
+def _get_table(table_name, metadata):
+    """Return a sqlalchemy Table definition with associated metadata."""
+    return sqlalchemy.Table(table_name, metadata, autoload=True)

@@ -24,6 +24,50 @@ import glance.common.utils
 meta = sqlalchemy.MetaData()
 
 
+def upgrade(migrate_engine):
+    meta.bind = migrate_engine
+
+    t_images = _get_table('images', meta)
+    t_image_members = _get_table('image_members', meta)
+    t_image_properties = _get_table('image_properties', meta)
+
+    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
+
+    fk1.drop()
+    fk2.drop()
+
+    t_images.c.id.alter(sqlalchemy.String(36), primary_key=True)
+    t_image_members.c.image_id.alter(sqlalchemy.String(36))
+    t_image_properties.c.image_id.alter(sqlalchemy.String(36))
+
+    _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties)
+
+    fk1.create()
+    fk2.create()
+
+
+def downgrade(migrate_engine):
+    meta.bind = migrate_engine
+
+    t_images = _get_table('images', meta)
+    t_image_members = _get_table('image_members', meta)
+    t_image_properties = _get_table('image_properties', meta)
+
+    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
+
+    fk1.drop()
+    fk2.drop()
+
+    t_images.c.id.alter(sqlalchemy.Integer(), primary_key=True)
+    t_image_members.c.image_id.alter(sqlalchemy.Integer())
+    t_image_properties.c.image_id.alter(sqlalchemy.Integer())
+
+    _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties)
+
+    fk1.create()
+    fk2.create()
+
+
 def _get_table(table_name, metadata):
     """Return a sqlalchemy Table definition with associated metadata."""
     return sqlalchemy.Table(table_name, metadata, autoload=True)
@@ -45,104 +89,41 @@ def _get_foreign_keys(t_images, t_image_members, t_image_properties):
     return fk1, fk2
 
 
-def upgrade_sqlite(migrate_engine):
-    pass
-
-
-def downgrade_sqlite(migrate_engine):
-    pass
-
-
-def upgrade(migrate_engine):
-    meta.bind = migrate_engine
-
-    dialect_name = migrate_engine.url.get_dialect().name
-
-    if dialect_name == "sqlite":
-        return upgrade_sqlite(migrate_engine)
-
-    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
-
-    fk1.drop()
-    fk2.drop()
-
-    t_images.c.id.alter(sqlalchemy.String(36), primary_key=True)
-    t_image_members.c.image_id.alter(sqlalchemy.String(36))
-    t_image_properties.c.image_id.alter(sqlalchemy.String(36))
-
-    for image in migrate_engine.execute(t_images.select()):
+def _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties):
+    """Transition from INTEGER id to VARCHAR(36) id."""
+    for image in t_images.select().execute():
         old_id = image["id"]
         new_id = glance.common.utils.generate_uuid()
 
-        query = t_images.update().\
-                    where(t_images.c.id==old_id).\
-                    values(id=new_id)
+        t_images.update().\
+            where(t_images.c.id==old_id).\
+            values(id=new_id).execute()
 
-        migrate_engine.execute(query)
+        t_image_members.update().\
+            where(t_image_members.c.image_id==old_id).\
+            values(image_id=new_id).execute()
 
-        query = t_image_members.update().\
-                    where(t_image_members.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
-
-        query = t_image_properties.update().\
-                    where(t_image_properties.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
-
-    fk1.create()
-    fk2.create()
+        t_image_properties.update().\
+            where(t_image_properties.c.image_id==old_id).\
+            values(image_id=new_id).execute()
 
 
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-
-    dialect_name = migrate_engine.url.get_dialect().name
-
-    if dialect_name == "sqlite":
-        return downgrade_sqlite(migrate_engine)
-
-    t_images = sqlalchemy.Table('images', meta, autoload=True)
-    t_image_members = sqlalchemy.Table('image_members', meta, autoload=True)
-    t_image_properties = sqlalchemy.Table('image_properties',
-                                          meta,
-                                          autoload=True)
-
-    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
-
-    fk1.drop()
-    fk2.drop()
-
-    t_images.c.id.alter(sqlalchemy.Integer(), primary_key=True)
-    t_image_members.c.image_id.alter(sqlalchemy.Integer())
-    t_image_properties.c.image_id.alter(sqlalchemy.Integer())
-
-    for image in migrate_engine.execute(t_images.select()):
+def _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties):
+    """Transition from VARCHAR(36) id to INTEGER id."""
+    for image in t_images.select().execute():
         old_id = image["id"]
         new_id = 0
 
-        query = t_images.update().\
-                    where(t_images.c.id==old_id).\
-                    values(id=new_id)
+        t_images.update().\
+            where(t_images.c.id==old_id).\
+            values(id=new_id).execute()
 
-        migrate_engine.execute(query)
+        t_image_members.update().\
+            where(t_image_members.c.image_id==old_id).\
+            values(image_id=new_id).execute()
 
-        query = t_image_members.update().\
-                    where(t_image_members.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
-
-        query = t_image_properties.update().\
-                    where(t_image_properties.c.image_id==old_id).\
-                    values(image_id=new_id)
-
-        migrate_engine.execute(query)
+        t_image_properties.update().\
+            where(t_image_properties.c.image_id==old_id).\
+            values(image_id=new_id).execute()
 
         new_id += 1
-
-    fk1.create()
-    fk2.create()
-
