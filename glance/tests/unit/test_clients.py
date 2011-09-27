@@ -754,7 +754,7 @@ class TestRegistryClient(unittest.TestCase):
         dt4 = datetime.datetime.utcnow() + datetime.timedelta(3)
         iso4 = utils.isotime(dt4)
 
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -766,7 +766,7 @@ class TestRegistryClient(unittest.TestCase):
         db_api.image_create(self.context, extra_fixture)
         db_api.image_destroy(self.context, 3)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'ami',
@@ -782,8 +782,8 @@ class TestRegistryClient(unittest.TestCase):
         # Check a standard list, 4 images in db (2 deleted)
         images = self.client.get_images_detailed(filters={})
         self.assertEquals(len(images), 2)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '2')
 
         # Expect 3 images (1 deleted)
         filters = {'changes-since': iso1}
@@ -806,7 +806,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_details_with_changes_since(self):
         """Tests that a detailed call can be filtered by changes-since"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -825,7 +825,7 @@ class TestRegistryClient(unittest.TestCase):
 
     def test_get_image_details_by_property(self):
         """Tests that a detailed call can be filtered by a property"""
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'saving',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1412,7 +1412,7 @@ class TestClient(unittest.TestCase):
         dt4 = datetime.datetime.utcnow() + datetime.timedelta(3)
         iso4 = utils.isotime(dt4)
 
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1424,7 +1424,7 @@ class TestClient(unittest.TestCase):
         db_api.image_create(self.context, extra_fixture)
         db_api.image_destroy(self.context, 3)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'ami',
@@ -1440,22 +1440,22 @@ class TestClient(unittest.TestCase):
         # Check a standard list, 4 images in db (2 deleted)
         images = self.client.get_images_detailed(filters={})
         self.assertEquals(len(images), 2)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '2')
 
         # Expect 3 images (1 deleted)
         filters = {'changes-since': iso1}
         images = self.client.get_images(filters=filters)
         self.assertEquals(len(images), 3)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 3)  # deleted
-        self.assertEqual(images[2]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '3')  # deleted
+        self.assertEqual(images[2]['id'], '2')
 
         # Expect 1 images (0 deleted)
         filters = {'changes-since': iso2}
         images = self.client.get_images_detailed(filters=filters)
         self.assertEquals(len(images), 1)
-        self.assertEqual(images[0]['id'], 4)
+        self.assertEqual(images[0]['id'], '4')
 
         # Expect 0 images (0 deleted)
         filters = {'changes-since': iso4}

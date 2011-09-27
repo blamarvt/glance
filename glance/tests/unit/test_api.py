@@ -1227,7 +1227,7 @@ class TestRegistryAPI(unittest.TestCase):
         dt4 = datetime.datetime.utcnow() + datetime.timedelta(3)
         iso4 = utils.isotime(dt4)
 
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -1239,7 +1239,7 @@ class TestRegistryAPI(unittest.TestCase):
         db_api.image_create(self.context, extra_fixture)
         db_api.image_destroy(self.context, 3)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'ami',
@@ -1259,8 +1259,8 @@ class TestRegistryAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 2)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '2')
 
         # Expect 3 images (1 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso1)
@@ -1269,9 +1269,9 @@ class TestRegistryAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 3)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 3)  # deleted
-        self.assertEqual(images[2]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '3')  # deleted
+        self.assertEqual(images[2]['id'], '2')
 
         # Expect 1 images (0 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso2)
@@ -1280,7 +1280,7 @@ class TestRegistryAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 1)
-        self.assertEqual(images[0]['id'], 4)
+        self.assertEqual(images[0]['id'], '4')
 
         # Expect 0 images (0 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso4)
@@ -2088,7 +2088,7 @@ class TestGlanceAPI(unittest.TestCase):
         dt4 = datetime.datetime.utcnow() + datetime.timedelta(3)
         iso4 = utils.isotime(dt4)
 
-        extra_fixture = {'id': 3,
+        extra_fixture = {'id': '3',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'vhd',
@@ -2100,7 +2100,7 @@ class TestGlanceAPI(unittest.TestCase):
         db_api.image_create(self.context, extra_fixture)
         db_api.image_destroy(self.context, 3)
 
-        extra_fixture = {'id': 4,
+        extra_fixture = {'id': '4',
                          'status': 'active',
                          'is_public': True,
                          'disk_format': 'ami',
@@ -2120,8 +2120,8 @@ class TestGlanceAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 2)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '2')
 
         # Expect 3 images (1 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso1)
@@ -2130,9 +2130,9 @@ class TestGlanceAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 3)
-        self.assertEqual(images[0]['id'], 4)
-        self.assertEqual(images[1]['id'], 3)  # deleted
-        self.assertEqual(images[2]['id'], 2)
+        self.assertEqual(images[0]['id'], '4')
+        self.assertEqual(images[1]['id'], '3')  # deleted
+        self.assertEqual(images[2]['id'], '2')
 
         # Expect 1 images (0 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso2)
@@ -2141,7 +2141,7 @@ class TestGlanceAPI(unittest.TestCase):
         res_dict = json.loads(res.body)
         images = res_dict['images']
         self.assertEquals(len(images), 1)
-        self.assertEqual(images[0]['id'], 4)
+        self.assertEqual(images[0]['id'], '4')
 
         # Expect 0 images (0 deleted)
         req = webob.Request.blank('/images/detail?changes-since=%s' % iso4)
