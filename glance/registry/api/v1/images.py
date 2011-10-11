@@ -211,13 +211,7 @@ class Controller(object):
         """Parse a marker query param into something usable."""
         marker = req.str_params.get('marker', None)
 
-        if marker is None:
-            return None
-
-        try:
-            marker = int(marker)
-        except ValueError:
-            raise exc.HTTPBadRequest(_("marker param must be an integer"))
+        # TODO(wwolf): do some sort of UUID-validity check here?
         return marker
 
     def _get_sort_key(self, req):
