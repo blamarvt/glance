@@ -314,7 +314,7 @@ class Controller(api.BaseController):
             logger.error(msg)
             raise HTTPConflict(msg, request=req, content_type="text/plain")
         except exception.Invalid, e:
-            msg = (_("Failed to reserve image. Got error: %(e)s") % locals())
+            msg = (_("Failed to reserve image. Got error: %s") % str(e))
             for line in msg.split('\n'):
                 logger.error(line)
             raise HTTPBadRequest(msg, request=req, content_type="text/plain")
@@ -568,14 +568,14 @@ class Controller(api.BaseController):
             if image_data is not None:
                 image_meta = self._upload_and_activate(req, image_meta)
         except exception.Invalid, e:
-            msg = (_("Failed to update image metadata. Got error: %(e)s")
-                   % locals())
+            msg = (_("Failed to update image metadata. Got error: %s")
+                   % str(e))
             for line in msg.split('\n'):
                 logger.error(line)
             self.notifier.error('image.update', msg)
             raise HTTPBadRequest(msg, request=req, content_type="text/plain")
         except exception.NotFound, e:
-            msg = ("Failed to find image to update: %(e)s" % locals())
+            msg = ("Failed to find image to update: %s" % str(e))
             for line in msg.split('\n'):
                 logger.info(line)
             self.notifier.info('image.update', msg)
@@ -615,7 +615,7 @@ class Controller(api.BaseController):
                                              req.context, id)
             registry.delete_image_metadata(self.options, req.context, id)
         except exception.NotFound, e:
-            msg = ("Failed to find image to delete: %(e)s" % locals())
+            msg = ("Failed to find image to delete: %s" % str(e))
             for line in msg.split('\n'):
                 logger.info(line)
             self.notifier.info('image.delete', msg)
