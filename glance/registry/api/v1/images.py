@@ -332,7 +332,7 @@ class Controller(object):
             return exc.HTTPConflict(msg)
         except exception.Invalid, e:
             msg = (_("Failed to add image metadata. "
-                     "Got error: %(e)s") % locals())
+                     "Got error: %s") % str(e))
             logger.error(msg)
             return exc.HTTPBadRequest(msg)
 
@@ -368,7 +368,7 @@ class Controller(object):
             return dict(image=make_image_dict(updated_image))
         except exception.Invalid, e:
             msg = (_("Failed to update image metadata. "
-                     "Got error: %(e)s") % locals())
+                     "Got error: %s") % str(e))
             logger.error(msg)
             return exc.HTTPBadRequest(msg)
         except exception.NotFound:
