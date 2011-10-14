@@ -18,6 +18,17 @@
 
 """Glance exception subclasses"""
 
+import urlparse
+
+
+class RedirectException(Exception):
+    def __init__(self, url):
+        parsed = urlparse.urlparse(url)
+        self.url = url
+        self.path = parsed.path
+        if parsed.query:
+            self.path += "?%s" % parsed.query
+
 
 class GlanceException(Exception):
     """
@@ -128,3 +139,11 @@ class StoreAddDisabled(GlanceException):
 
 class InvalidNotifierStrategy(GlanceException):
     message = _("'%(strategy)s' is not an available notifier strategy.")
+
+
+class MaxRedirectsExceeded(GlanceException):
+    message = _("Maximum redirects (%(redirects)s) was exceeded.")
+
+
+class InvalidRedirect(GlanceException):
+    message = _("Received invalid HTTP redirect.")
