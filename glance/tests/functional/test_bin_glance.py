@@ -591,7 +591,7 @@ class TestBinGlance(functional.FunctionalTest):
         self.assertTrue(image_lines[2].split()[0], image_ids[4])
 
         # 4. Sort by container_format desc
-        cmd = "--sort_key=container_format --sort_dir=desc"
+        cmd = "--sort_key=container_format --sort_dir=desc --limit=10"
         exitcode, out, err = execute("%s %s" % (index_cmd, cmd))
 
         self.assertEqual(0, exitcode)

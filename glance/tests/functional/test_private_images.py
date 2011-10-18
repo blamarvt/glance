@@ -54,11 +54,12 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
                                          body=image_data)
         self.assertEqual(response.status, 201)
         data = json.loads(content)
-        self.assertEqual(data['image']['id'], 1)
         self.assertEqual(data['image']['size'], FIVE_KB)
         self.assertEqual(data['image']['name'], "Image1")
         self.assertEqual(data['image']['is_public'], False)
         self.assertEqual(data['image']['owner'], 'pattieblack')
+
+        image_id = data['image']['id']
 
         # Next, make sure froggy can't list the image
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
@@ -78,14 +79,16 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
 
         # Also check that froggy can't get the image metadata
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'HEAD', headers=headers)
         self.assertEqual(response.status, 404)
 
         # Froggy shouldn't be able to get the image, either.
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'GET', headers=headers)
         self.assertEqual(response.status, 404)
@@ -94,7 +97,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # easily...
         headers = {'X-Auth-Token': keystone_utils.froggy_token,
                    'X-Image-Meta-Is-Public': 'True'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 404)
@@ -103,14 +107,16 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # either
         headers = {'X-Auth-Token': keystone_utils.froggy_token,
                    'X-Image-Meta-Owner': 'froggy'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 404)
 
         # Froggy can't delete it, either
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'DELETE', headers=headers)
         self.assertEqual(response.status, 404)
@@ -135,7 +141,6 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         self.assertEqual(response.status, 200)
         data = json.loads(content)
         self.assertEqual(len(data['images']), 1)
-        self.assertEqual(data['images'][0]['id'], 1)
         self.assertEqual(data['images'][0]['size'], FIVE_KB)
         self.assertEqual(data['images'][0]['name'], "Image1")
         self.assertEqual(data['images'][0]['is_public'], False)
@@ -143,7 +148,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
 
         # Pattieblack should be able to get the image metadata
         headers = {'X-Auth-Token': keystone_utils.pattieblack_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'HEAD', headers=headers)
         self.assertEqual(response.status, 200)
@@ -153,7 +159,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
 
         # And of course the image itself
         headers = {'X-Auth-Token': keystone_utils.pattieblack_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'GET', headers=headers)
         self.assertEqual(response.status, 200)
@@ -165,7 +172,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # Pattieblack should be able to manipulate is_public
         headers = {'X-Auth-Token': keystone_utils.pattieblack_token,
                    'X-Image-Meta-Is-Public': 'True'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 200)
@@ -177,7 +185,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # Pattieblack can't give the image away, however
         headers = {'X-Auth-Token': keystone_utils.pattieblack_token,
                    'X-Image-Meta-Owner': 'froggy'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 200)
@@ -214,7 +223,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
 
         # Froggy can get the image metadata now...
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'HEAD', headers=headers)
         self.assertEqual(response.status, 200)
@@ -224,7 +234,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
 
         # And of course the image itself
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'GET', headers=headers)
         self.assertEqual(response.status, 200)
@@ -236,7 +247,8 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # Froggy still can't change is-public
         headers = {'X-Auth-Token': keystone_utils.froggy_token,
                    'X-Image-Meta-Is-Public': 'True'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 404)
@@ -244,21 +256,24 @@ class TestPrivateImagesApi(keystone_utils.KeystoneTests):
         # Or give themselves ownership
         headers = {'X-Auth-Token': keystone_utils.froggy_token,
                    'X-Image-Meta-Owner': 'froggy'}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'PUT', headers=headers)
         self.assertEqual(response.status, 404)
 
         # Froggy can't delete it, either
         headers = {'X-Auth-Token': keystone_utils.froggy_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'DELETE', headers=headers)
         self.assertEqual(response.status, 404)
 
         # But pattieblack can
         headers = {'X-Auth-Token': keystone_utils.pattieblack_token}
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
+        path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
+                                              image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'DELETE', headers=headers)
         self.assertEqual(response.status, 200)

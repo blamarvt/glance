@@ -192,9 +192,9 @@ def image_get_all(context, filters=None, marker=None, limit=None,
     }[sort_dir]
 
     sort_key_attr = getattr(models.Image, sort_key)
-
-    query = query.order_by(sort_dir_func(sort_key_attr)).\
-                  order_by(sort_dir_func(models.Image.id))
+    query = query.order_by(sort_dir_func(sort_key_attr))\
+                 .order_by(sort_dir_func(models.Image.created_at))\
+                 .order_by(sort_dir_func(models.Image.id))
 
     if 'size_min' in filters:
         query = query.filter(models.Image.size >= filters['size_min'])
@@ -242,11 +242,13 @@ def image_get_all(context, filters=None, marker=None, limit=None,
             query = query.filter(
                 or_(sort_key_attr < marker_value,
                     and_(sort_key_attr == marker_value,
+                         models.Image.created_at < marker_image.created_at,
                          models.Image.id < marker)))
         else:
             query = query.filter(
                 or_(sort_key_attr > marker_value,
                     and_(sort_key_attr == marker_value,
+                         models.Image.created_at > marker_image.created_at,
                          models.Image.id > marker)))
 
     if limit != None:

@@ -45,26 +45,24 @@ class TestApi(functional.FunctionalTest):
         - Verify no public images
         1. GET /images/detail
         - Verify no public images
-        2. HEAD /images/1
-        - Verify 404 returned
-        3. POST /images with public image named Image1
+        2. POST /images with public image named Image1
         and no custom properties
         - Verify 201 returned
-        4. HEAD /images/1
+        3. HEAD image
         - Verify HTTP headers have correct information we just added
-        5. GET /images/1
+        4. GET image
         - Verify all information on image we just added is correct
-        6. GET /images
+        5. GET /images
         - Verify the image we just added is returned
-        7. GET /images/detail
+        6. GET /images/detail
         - Verify the image we just added is returned
-        8. PUT /images/1 with custom properties of "distro" and "arch"
+        7. PUT image with custom properties of "distro" and "arch"
         - Verify 200 returned
-        9. GET /images/1
+        8. GET image
         - Verify updated information about image was stored
-        10. PUT /images/1
+        9. PUT image
         - Remove a previously existing property.
-        11. PUT /images/1
+        10. PUT image
         - Add a previously deleted property.
         """
         self.cleanup()
@@ -86,14 +84,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         self.assertEqual(content, '{"images": []}')
 
-        # 2. HEAD /images/1
-        # Verify 404 returned
-        path = "http://%s:%d/v1/images/1" % ("0.0.0.0", self.api_port)
-        http = httplib2.Http()
-        response, content = http.request(path, 'HEAD')
-        self.assertEqual(response.status, 404)
-
-        # 3. POST /images with public image named Image1
+        # 2. POST /images with public image named Image1
         # attribute and no custom properties. Verify a 200 OK is returned
         image_data = "*" * FIVE_KB
         headers = {'Content-Type': 'application/octet-stream',
@@ -112,7 +103,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(data['image']['name'], "Image1")
         self.assertEqual(data['image']['is_public'], True)
 
-        # 4. HEAD /images/1
+        # 3. HEAD image
         # Verify image found now
         path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
                                               image_id)
@@ -121,13 +112,12 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response.status, 200)
         self.assertEqual(response['x-image-meta-name'], "Image1")
 
-        # 5. GET /images/1
+        # 4. GET image
         # Verify all information on image we just added is correct
         path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
                                               image_id)
         http = httplib2.Http()
         response, content = http.request(path, 'GET')
-        print response, content
         self.assertEqual(response.status, 200)
 
         expected_image_headers = {
@@ -160,7 +150,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(hashlib.md5(content).hexdigest(),
                          hashlib.md5("*" * FIVE_KB).hexdigest())
 
-        # 6. GET /images
+        # 5. GET /images
         # Verify no public images
         path = "http://%s:%d/v1/images" % ("0.0.0.0", self.api_port)
         http = httplib2.Http()
@@ -176,7 +166,7 @@ class TestApi(functional.FunctionalTest):
              "size": 5120}]}
         self.assertEqual(json.loads(content), expected_result)
 
-        # 7. GET /images/detail
+        # 6. GET /images/detail
         # Verify image and all its metadata
         path = "http://%s:%d/v1/images/detail" % ("0.0.0.0", self.api_port)
         http = httplib2.Http()
@@ -204,7 +194,7 @@ class TestApi(functional.FunctionalTest):
                                expected_value,
                                image['images'][0][expected_key]))
 
-        # 8. PUT /images/1 with custom properties of "distro" and "arch"
+        # 7. PUT image with custom properties of "distro" and "arch"
         # Verify 200 returned
         headers = {'X-Image-Meta-Property-Distro': 'Ubuntu',
                    'X-Image-Meta-Property-Arch': 'x86_64'}
@@ -217,7 +207,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(data['image']['properties']['arch'], "x86_64")
         self.assertEqual(data['image']['properties']['distro'], "Ubuntu")
 
-        # 9. GET /images/detail
+        # 8. GET /images/detail
         # Verify image and all its metadata
         path = "http://%s:%d/v1/images/detail" % ("0.0.0.0", self.api_port)
         http = httplib2.Http()
@@ -245,7 +235,7 @@ class TestApi(functional.FunctionalTest):
                                expected_value,
                                image['images'][0][expected_key]))
 
-        # 10. PUT /images/1 and remove a previously existing property.
+        # 9. PUT image and remove a previously existing property.
         headers = {'X-Image-Meta-Property-Arch': 'x86_64'}
         path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
                                               image_id)
@@ -260,7 +250,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(len(data['properties']), 1)
         self.assertEqual(data['properties']['arch'], "x86_64")
 
-        # 11. PUT /images/1 and add a previously deleted property.
+        # 10. PUT image and add a previously deleted property.
         headers = {'X-Image-Meta-Property-Distro': 'Ubuntu',
                    'X-Image-Meta-Property-Arch': 'x86_64'}
         path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
@@ -295,11 +285,11 @@ class TestApi(functional.FunctionalTest):
         - Verify 201 returned
         2. GET /images
         - Verify one public image
-        3. HEAD /images/1
+        3. HEAD image
         - Verify image now in queued status
-        4. PUT /images/1 with image data
+        4. PUT image with image data
         - Verify 200 returned
-        5. HEAD /images/1
+        5. HEAD images
         - Verify image now in active status
         6. GET /images
         - Verify one public image
@@ -361,7 +351,7 @@ class TestApi(functional.FunctionalTest):
         self.assertEqual(response['x-image-meta-size'], '0')
         self.assertEqual(response['x-image-meta-id'], image_id)
 
-        # 4. PUT /images/1 with image data, verify 200 returned
+        # 4. PUT image with image data, verify 200 returned
         image_data = "*" * FIVE_KB
         headers = {'Content-Type': 'application/octet-stream'}
         path = "http://%s:%d/v1/images/%s" % ("0.0.0.0", self.api_port,
