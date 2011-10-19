@@ -15,6 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+While SQLAlchemy/sqlalchemy-migrate should abstract this correctly,
+there are known issues with these libraries so SQLite and non-SQLite
+migrations must be done separately.
+"""
+
+import copy
 import migrate
 import sqlalchemy
 
@@ -25,16 +32,155 @@ meta = sqlalchemy.MetaData()
 
 
 def upgrade(migrate_engine):
+    """
+    Call the correct dialect-specific upgrade.
+    """
     meta.bind = migrate_engine
 
     t_images = _get_table('images', meta)
     t_image_members = _get_table('image_members', meta)
     t_image_properties = _get_table('image_properties', meta)
 
-    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
+    if migrate_engine.url.get_dialect().name == "sqlite":
+        _upgrade_sqlite(t_images, t_image_members, t_image_properties)
+    else:
+        _upgrade_other(t_images, t_image_members, t_image_properties)
 
-    fk1.drop()
-    fk2.drop()
+    _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties)
+
+
+def downgrade(migrate_engine):
+    """
+    Call the correct dialect-specific downgrade.
+    """
+    meta.bind = migrate_engine
+
+    t_images = _get_table('images', meta)
+    t_image_members = _get_table('image_members', meta)
+    t_image_properties = _get_table('image_properties', meta)
+
+    if migrate_engine.url.get_dialect().name == "sqlite":
+        _downgrade_sqlite(t_images, t_image_members, t_image_properties)
+    else:
+        _downgrade_other(t_images, t_image_members, t_image_properties)
+
+    _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties)
+
+
+def _upgrade_sqlite(t_images, t_image_members, t_image_properties):
+    """
+    Upgrade 011 -> 012 with special SQLite-compatible logic.
+    """
+    t_images.c.id.alter(sqlalchemy.Column("id",
+                                          sqlalchemy.String(36),
+                                          primary_key=True))
+
+    sql_commands = ["""
+        CREATE TABLE image_members_backup (
+            id INTEGER NOT NULL,
+            image_id VARCHAR(36) NOT NULL,
+            member VARCHAR(255) NOT NULL,
+            can_share BOOLEAN NOT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME,
+            deleted_at DATETIME,
+            deleted BOOLEAN NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE (image_id, member),
+            CHECK (can_share IN (0, 1)),
+            CHECK (deleted IN (0, 1)),
+            FOREIGN KEY(image_id) REFERENCES images (id)
+        );""","""
+        INSERT INTO image_members_backup
+            SELECT * FROM image_members;
+        ""","""
+        CREATE TABLE image_properties_backup (
+            id INTEGER NOT NULL,
+            image_id VARCHAR(36) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            value TEXT,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME,
+            deleted_at DATETIME,
+            deleted BOOLEAN NOT NULL,
+            PRIMARY KEY (id),
+            CHECK (deleted IN (0, 1)),
+            UNIQUE (image_id, name),
+            FOREIGN KEY(image_id) REFERENCES images (id)
+        );
+        ""","""
+        INSERT INTO image_properties_backup
+            SELECT * FROM image_properties;
+        """,
+    ]
+
+    for command in sql_commands:
+        meta.bind.execute(command)
+
+    _sqlite_table_swap(t_image_members, t_image_properties)
+
+
+def _downgrade_sqlite(t_images, t_image_members, t_image_properties):
+    """
+    Downgrade 012 -> 011 with special SQLite-compatible logic.
+    """
+    t_images.c.id.alter(sqlalchemy.Column("id",
+                                          sqlalchemy.Integer(),
+                                          primary_key=True))
+
+    sql_commands = ["""
+        CREATE TABLE image_members_backup (
+            id INTEGER NOT NULL,
+            image_id INTEGER NOT NULL,
+            member VARCHAR(255) NOT NULL,
+            can_share BOOLEAN NOT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME,
+            deleted_at DATETIME,
+            deleted BOOLEAN NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE (image_id, member),
+            CHECK (can_share IN (0, 1)),
+            CHECK (deleted IN (0, 1)),
+            FOREIGN KEY(image_id) REFERENCES images (id)
+        );""","""
+        INSERT INTO image_members_backup
+            SELECT * FROM image_members;
+        ""","""
+        CREATE TABLE image_properties_backup (
+            id INTEGER NOT NULL,
+            image_id INTEGER  NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            value TEXT,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME,
+            deleted_at DATETIME,
+            deleted BOOLEAN NOT NULL,
+            PRIMARY KEY (id),
+            CHECK (deleted IN (0, 1)),
+            UNIQUE (image_id, name),
+            FOREIGN KEY(image_id) REFERENCES images (id)
+        );
+        ""","""
+        INSERT INTO image_properties_backup
+            SELECT * FROM image_properties;
+        """,
+    ]
+
+    for command in sql_commands:
+        meta.bind.execute(command)
+
+    _sqlite_table_swap(t_image_members, t_image_properties)
+
+
+def _upgrade_other(t_images, t_image_members, t_image_properties):
+    """
+    Upgrade 011 -> 012 with logic for non-SQLite databases.
+    """
+    foreign_keys = _get_foreign_keys(t_images, t_image_members, t_image_properties)
+
+    for fk in foreign_keys:
+        fk.drop()
 
     t_images.c.id.alter(sqlalchemy.String(36), primary_key=True)
     t_image_members.c.image_id.alter(sqlalchemy.String(36))
@@ -42,21 +188,18 @@ def upgrade(migrate_engine):
 
     _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties)
 
-    fk1.create()
-    fk2.create()
+    for fk in foreign_keys:
+        fk.create()
 
 
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
+def _downgrade_other(t_images, t_image_members, t_image_properties):
+    """
+    Downgrade 012 -> 011 with logic for non-SQLite databases.
+    """
+    foreign_keys = _get_foreign_keys(t_images, t_image_members, t_image_properties)
 
-    t_images = _get_table('images', meta)
-    t_image_members = _get_table('image_members', meta)
-    t_image_properties = _get_table('image_properties', meta)
-
-    fk1, fk2 = _get_foreign_keys(t_images, t_image_members, t_image_properties)
-
-    fk1.drop()
-    fk2.drop()
+    for fk in foreign_keys:
+        fk.drop()
 
     t_images.c.id.alter(sqlalchemy.Integer(), primary_key=True)
     t_image_members.c.image_id.alter(sqlalchemy.Integer())
@@ -64,8 +207,21 @@ def downgrade(migrate_engine):
 
     _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties)
 
-    fk1.create()
-    fk2.create()
+    for fk in foreign_keys:
+        fk.create()
+
+
+def _sqlite_table_swap(t_image_members, t_image_properties):
+    t_image_members.drop()
+    t_image_properties.drop()
+
+    meta.bind.execute("ALTER TABLE image_members_backup "
+                      "RENAME TO image_members")
+    meta.bind.execute("ALTER TABLE image_properties_backup "
+                      "RENAME TO image_properties")
+
+    for index in t_image_members.indexes.union(t_image_properties.indexes):
+        index.create()
 
 
 def _get_table(table_name, metadata):
@@ -91,7 +247,9 @@ def _get_foreign_keys(t_images, t_image_members, t_image_properties):
 
 def _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties):
     """Transition from INTEGER id to VARCHAR(36) id."""
-    for image in t_images.select().execute():
+    images = list(t_images.select().execute())
+
+    for image in images:
         old_id = image["id"]
         new_id = glance.common.utils.generate_uuid()
 
@@ -110,7 +268,9 @@ def _update_all_ids_to_uuids(t_images, t_image_members, t_image_properties):
 
 def _update_all_uuids_to_ids(t_images, t_image_members, t_image_properties):
     """Transition from VARCHAR(36) id to INTEGER id."""
-    for image in t_images.select().execute():
+    images = list(t_images.select().execute())
+
+    for image in images:
         old_id = image["id"]
         new_id = 0
 
